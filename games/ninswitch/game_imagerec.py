@@ -9,6 +9,8 @@ from games.ninswitch.ns_switch import NSSwitch
 from games.ninswitch.ns_dpad_switch import NSDPadSwitch
 from games.ninswitch.ns_joystick import NSJoystick
 
+# limit the processor use
+cv2.setNumThreads(1)
 
 # image rec
 SAVE_FRAMES = False
@@ -102,7 +104,7 @@ class NinSwitchImageRecGame(Game):
             if has_flag(frame):
                 logging.info("Has flag!")
             else:
-                logging.info("Does't have flag")
+                logging.info("Doesn't have flag")
 
             # generic
             if i % 100 == 0:
