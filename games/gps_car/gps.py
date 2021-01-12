@@ -50,15 +50,10 @@ class GPSSensor:
         (use async methods to allow calling on_location in a non-blocking way)
         """
         self.robot_id = robot_id
-        sio.connect('http://165.227.146.155:3002?type=robot')
-        x = {
-                "robot_id":  robot_id,
-                "alt": 0, 
-                "lat":   0,
-                "long": 0 
-            }
+        sio.connect('http://165.227.146.155:3002?type=robot&game_id=0&robot_id=12345')
+        
         """Callback to receive area data from the server"""
-        #data = await self.sio.emit('retrieve_data', x)
+        #data = sio.call('get_location')
         #self.gps_area = GPSArea(data)
         self.gps_area = GPSArea(1)
         self.ser = serial.Serial(
@@ -100,7 +95,7 @@ class GPSSensor:
 
                     alt = gpsList[9]
 
-                #print("Latitude: " + str(latDec) + ", Longitude: " + str(longDec) + ", Altitude: " + alt)
+                    #print("Latitude: " + str(latDec) + ", Longitude: " + str(longDec) + ", Altitude: " + alt)
                     #print("WORKS")
                     return GPSData(latDec, longDec, alt)
                 except ValueError:
@@ -119,7 +114,6 @@ class GPSSensor:
                         "lat":   loc.lat,
                         "long": loc.lon 
                 }
-            #if ( loc.alt != -10000) 
             sio.emit('update_location', x)
             print(x)
             await asyncio.sleep(1)
@@ -135,7 +129,7 @@ class GPSSensor:
     async def disconnect(self):
         """Stop polling, connections, release resources"""
         sio.disconnect()
-
+"""
 #Receive area data from the server
 @sio.on('boundary_data')
 def boundary_data(data):
@@ -143,7 +137,7 @@ def boundary_data(data):
     print(data)
     self.gps_area = GPSArea(data)
     #return "OK", 123
-
+"""
 if __name__ == "__main__":
     # Example usage:
 
@@ -165,7 +159,7 @@ if __name__ == "__main__":
         task = asyncio.create_task(gps_sensor.run(1))
         print("sleeping")
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(45)
+        await asyncio.sleep(30)
         print("sleep ended")
         task.cancel()
         await gps_sensor.disconnect()
