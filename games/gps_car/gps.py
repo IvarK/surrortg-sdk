@@ -7,6 +7,7 @@ from dataclasses import dataclass
 """
 General:
  - Python version 3.7
+ - Socketio version 4.6.1
  - use python-socketio's async client for the communication:
  https://python-socketio.readthedocs.io/en/latest/api.html#asyncclient-class
  https://github.com/miguelgrinberg/python-socketio
@@ -20,13 +21,16 @@ class GPSData:
     """Represents data form the sensors
     
     Can include also speed, acceleration, angles etc.
-    This is just an example.
+    This is just for position
     """
     lat: float
     lon: float
     alt: float
 
 class GPSArea:
+
+    """Handles the calculations for the boundary data"""
+
     def __init__(self, gps_area):
             self.gps_area = gps_area
 
@@ -34,28 +38,48 @@ class GPSArea:
         """Returns True if inside the valid area, False if not"""
         return True
 
+
+class gpsSocket:
+
+    sio = socketio.AsyncClient()
+
+    def __init__(self, robot_id):
+        self.robot_id = robot_id
+
+    @sio.event
+    def boundary_data(data):
+        print('boundary data received: ', data)
+
+    async def send_data(self, data):
+        x = {
+                "robot_id":  self.robot_id,
+                "alt": data.alt, 
+                "lat":   data.lat,
+                "long": data.lon 
+            }
+        #print("SENDING DATA!")
+        await self.sio.emit('update_location', x)
+
+    async def connect(self):
+        #For testing locally
+        await self.sio.connect('http://localhost:5000')
+        #await self.sio.connect('http://165.227.146.155:3002?type=robot&game_id=0&robot_id=123456')
+
+    async def disconnect(self):
+        await self.sio.disconnect()
+
 class GPSSensor:
     """Do not implement __init__, as this is more convinient for the users
     """
-    #Global keyword for testing receiving data from server
-    global sio
-    sio = socketio.Client()
 
-    async def connect(self, polling_rate=1, pins="SOME_DEFAULT_PINS", robot_id=123456):
+    async def connect(self, polling_rate=1, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method
 
         Any required parameters can be passed to __init__ also (pins, etc.).
         Optionally allow specifying the polling rate to some appropriate value
 
-        (use async methods to allow calling on_location in a non-blocking way)
         """
-        self.robot_id = robot_id
-        sio.connect('http://165.227.146.155:3002?type=robot&game_id=0&robot_id=12345')
-        
-        """Callback to receive area data from the server"""
-        #data = sio.call('get_location')
-        #self.gps_area = GPSArea(data)
-        self.gps_area = GPSArea(1)
+
         self.ser = serial.Serial(
             port='/dev/ttyS0', 
             baudrate = 9600,
@@ -65,16 +89,19 @@ class GPSSensor:
             timeout=1
         )
 
-    async def get_data(self):
+    def get_data(self):
         """Returns a GPSData object
 
         After connect, this method should be called according to the polling rate
         (can be async def if needed)
         """
+        return GPSData(0, 0, -10000)
         while True:
             gpsData=str(self.ser.readline())
             if "$GPGGA" in gpsData:
                 try:
+
+                    """Parse the data from the sensor and convert the elements to a correct format"""
                     gpsList = gpsData.split(",")
 
                     latitude = gpsList[2]
@@ -95,30 +122,10 @@ class GPSSensor:
 
                     alt = gpsList[9]
 
-                    #print("Latitude: " + str(latDec) + ", Longitude: " + str(longDec) + ", Altitude: " + alt)
-                    #print("WORKS")
                     return GPSData(latDec, longDec, alt)
                 except ValueError:
-                    #print("Value Error")
                     return GPSData(0, 0, -10000)
 
-    
-    async def run(self, polling_rate):
-        while True:
-            loc = await self.get_data()
-            """Check if inside valid area and send coordinates to server"""
-            #in_valid_area(loc)
-            x = {
-                        "robot_id":  self.robot_id,
-                        "alt": loc.alt, 
-                        "lat":   loc.lat,
-                        "long": loc.lon 
-                }
-            sio.emit('update_location', x)
-            print(x)
-            await asyncio.sleep(1)
-
-    
     async def on_data(self, data):
         """Users should override this method to keep up with changes
         
@@ -128,40 +135,45 @@ class GPSSensor:
 
     async def disconnect(self):
         """Stop polling, connections, release resources"""
-        sio.disconnect()
-"""
-#Receive area data from the server
-@sio.on('boundary_data')
-def boundary_data(data):
-    print("RECEIVED DATA FROM THE SERVER: ")
-    print(data)
-    self.gps_area = GPSArea(data)
-    #return "OK", 123
-"""
+        pass
+
 if __name__ == "__main__":
     # Example usage:
 
-    # create custom gps sensor with callback
+    # create custom gps sensor
     class MyGPSSensor(GPSSensor):
+        
+        def __init__(self, socket):
+            self.socket = socket
 
-        async def on_data(self, data):
-            if self.gps_area.in_valid_area(data):
-                print("In valid area!")
-            else:
-                print("Was outside the valid area")
+        async def pre_run(self):
+            await self.socket.connect()
+
+        async def post_run(self):
+            await self.socket.disconnect()
+
+        async def run(self, polling_rate):
+            await self.pre_run()
+            while True:
+                loc = self.get_data()
+                await self.socket.send_data(loc)
+                await asyncio.sleep(1)
 
     async def main():
         print("running")
-        # create GPSSensor
-        gps_sensor = MyGPSSensor()
-        # connect
-        await gps_sensor.connect(polling_rate=10)
-        task = asyncio.create_task(gps_sensor.run(1))
-        print("sleeping")
+        #Create SocketIO and GPSSensor
+        socket = gpsSocket(123456)
+        gps_sensor = MyGPSSensor(socket)
+
+        #Create new task and add it to the event loop
+        event_loop = asyncio.get_event_loop()
+        task = event_loop.create_task(gps_sensor.run(1))
+        
         # get GPS updates for 30s according to the set polling rate
         await asyncio.sleep(30)
-        print("sleep ended")
-        task.cancel()
+        await gps_sensor.post_run()
+        print("main loop ended")
+        
         await gps_sensor.disconnect()
         
     asyncio.run(main())
