@@ -7,11 +7,13 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
+areaData = [(1,1),(-1, 1), (-1,-1), (1,-1)]
+
 @sio.event
 def connect(sid, environ):
     print('connect ', sid)
     asyncio.run_coroutine_threadsafe(
-        sio.emit('boundary_data', {'data': 'foobar'}),
+        sio.emit('boundary_data', {'data': areaData}),
         asyncio.get_event_loop(),
     )
 

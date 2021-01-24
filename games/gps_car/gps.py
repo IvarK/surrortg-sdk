@@ -36,19 +36,28 @@ class GPSArea:
 
     def in_valid_area(self, location):
         """Returns True if inside the valid area, False if not"""
+        coordinate_points = self.gps_area.values()
+        #for i in coordinate_points:
+        #    print(i)
         return True
 
 
-class gpsSocket:
+class GPSSocket:
 
     sio = socketio.AsyncClient()
 
-    def __init__(self, robot_id):
+    def __init__(self, url, robot_id, game_id):
+        self.url = url
         self.robot_id = robot_id
+        self.game_id = game_id
 
     @sio.event
-    def boundary_data(data):
+    def boundary_data(self, data):
         print('boundary data received: ', data)
+        self.gps_area = GPSArea(data)
+
+    def get_query_url(self, url):
+        self.url += f"?type=robot&game_id={self.game_id}&robot_id={self.robot_id}"
 
     async def send_data(self, data):
         x = {
@@ -57,13 +66,15 @@ class gpsSocket:
                 "lat":   data.lat,
                 "long": data.lon 
             }
-        #print("SENDING DATA!")
         await self.sio.emit('update_location', x)
 
     async def connect(self):
+        #Link the handler to the GPSSocket class, allows the use of 'self'
+        self.sio.on('boundary_data', self.boundary_data)
         #For testing locally
-        await self.sio.connect('http://localhost:5000')
-        #await self.sio.connect('http://165.227.146.155:3002?type=robot&game_id=0&robot_id=123456')
+        if "localhost" not in self.url:
+            self.get_query_url(self.url)
+        await self.sio.connect(self.url)
 
     async def disconnect(self):
         await self.sio.disconnect()
@@ -71,8 +82,9 @@ class gpsSocket:
 class GPSSensor:
     """Do not implement __init__, as this is more convinient for the users
     """
+    testing = False
 
-    async def connect(self, polling_rate=1, pins="SOME_DEFAULT_PINS"):
+    async def connect(self, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method
 
         Any required parameters can be passed to __init__ also (pins, etc.).
@@ -95,7 +107,8 @@ class GPSSensor:
         After connect, this method should be called according to the polling rate
         (can be async def if needed)
         """
-        return GPSData(0, 0, -10000)
+        if self.testing:
+            return GPSData(0, 0, -10000)
         while True:
             gpsData=str(self.ser.readline())
             if "$GPGGA" in gpsData:
@@ -147,6 +160,7 @@ if __name__ == "__main__":
             self.socket = socket
 
         async def pre_run(self):
+            self.testing = True
             await self.socket.connect()
 
         async def post_run(self):
@@ -157,12 +171,14 @@ if __name__ == "__main__":
             while True:
                 loc = self.get_data()
                 await self.socket.send_data(loc)
-                await asyncio.sleep(1)
+                self.socket.gps_area.in_valid_area(loc)
+                await asyncio.sleep(polling_rate)
 
     async def main():
         print("running")
         #Create SocketIO and GPSSensor
-        socket = gpsSocket(123456)
+        #http://165.227.146.155:3002
+        socket = GPSSocket('http://localhost:5000', 123456, 1)
         gps_sensor = MyGPSSensor(socket)
 
         #Create new task and add it to the event loop
@@ -170,7 +186,7 @@ if __name__ == "__main__":
         task = event_loop.create_task(gps_sensor.run(1))
         
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
         await gps_sensor.post_run()
         print("main loop ended")
         
