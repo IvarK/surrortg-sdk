@@ -95,12 +95,25 @@ test_location_true2 = [24.9343729, 60.1841233]
 test_location_false = [24.9311543, 60.1794712]
 area = GPSArea(test_area)
 
+paris = [2.3522, 48.8566]
+brisbane = [153.021072, -27.470125]
+
 
 class TestGPSArea(unittest.TestCase):
     def test_in_valid_area(self):
         self.assertEquals(area.in_valid_area(test_location_true), True)
         self.assertEquals(area.in_valid_area(test_location_true2), True)
         self.assertEquals(area.in_valid_area(test_location_false), False)
+
+    def test_distance_to_border(self):
+        self.assertAlmostEqual(
+            area.distance_to_border(paris),
+            1909000,
+            delta=5000)
+        self.assertAlmostEqual(
+            area.distance_to_border(brisbane),
+            14705000,
+            delta=5000)
 
 
 if __name__ == "__main__":

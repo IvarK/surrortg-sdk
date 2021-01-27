@@ -18,6 +18,7 @@ General:
  - pyserial and pyserial-asyncio could be beneficial if serial communication is required
  (if i2c is better use that) 
  https://github.com/pyserial/pyserial-asyncio
+ -Shapely 1.7.1 
 """
 
 @dataclass
