@@ -128,7 +128,6 @@ class MyGPSSensor(GPSSensor):
         self.motor = motor
         self.inputs_enabled = True # call enable/disable inputs only when needed
 
-    #GPSArea class not ready
     async def on_data(self, data):
         inside = self.gps_socket.gps_area.in_valid_area(data)
         if not self.inputs_enabled and inside:
@@ -190,7 +189,7 @@ class CarGame(Game):
         )
 
         # create gpsSocket and custom GPSSensor
-        # 'http://localhost:9000'
+        # 'http://localhost:9090'
         self.gps_socket = GPSSocket('http://165.227.146.155:3002', self.io._config["device_id"], self.io._config["game_engine"]["id"]) # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         #Create new task

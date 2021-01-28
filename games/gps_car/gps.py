@@ -4,6 +4,10 @@ import socketio
 import asyncio
 from dataclasses import dataclass
 
+from shapely.geometry import Point, Polygon, LinearRing
+from shapely.ops import nearest_points
+from math import radians, cos, sin, asin, sqrt
+
 """
 General:
  - Python version 3.7
@@ -14,6 +18,7 @@ General:
  - pyserial and pyserial-asyncio could be beneficial if serial communication is required
  (if i2c is better use that) 
  https://github.com/pyserial/pyserial-asyncio
+ -Shapely 1.7.1 
 """
 
 @dataclass
@@ -32,14 +37,30 @@ class GPSArea:
     """Handles the calculations for the boundary data"""
 
     def __init__(self, gps_area):
-            self.gps_area = gps_area
+    	self.gps_area = gps_area
 
     def in_valid_area(self, location):
+        boundary_area = Polygon(self.gps_area)
+        loc = Point([location.lat, location.lon])
         """Returns True if inside the valid area, False if not"""
-        coordinate_points = self.gps_area.values()
-        #for i in coordinate_points:
-        #    print(i)
-        return True
+        return boundary_area.contains(loc)
+
+    def distance_to_border(self, location):
+        border = LinearRing(self.gps_area)
+        loc = Point([location.lat, location.lon])
+        p1, _ = nearest_points(border, loc)
+
+        def haversine(lon1, lat1, lon2, lat2):
+            lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+            dlon = lon2 - lon1
+            dlat = lat2 - lat1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * asin(sqrt(a))
+            r = 6371000
+            return c * r
+
+        distance = haversine(loc.x, loc.y, p1.x, p1.y)
+        return distance
 
 
 class GPSSocket:
@@ -54,7 +75,7 @@ class GPSSocket:
     @sio.event
     def boundary_data(self, data):
         print('boundary data received: ', data)
-        self.gps_area = GPSArea(data)
+        self.gps_area = GPSArea(data["data"])
 
     def get_query_url(self, url):
         self.url += f"?type=robot&game_id={self.game_id}&robot_id={self.robot_id}"
@@ -108,7 +129,7 @@ class GPSSensor:
         (can be async def if needed)
         """
         if self.testing:
-            return GPSData(0, 0, -10000)
+            return GPSData(0.1, 0.1, -10000)
         while True:
             gpsData=str(self.ser.readline())
             if "$GPGGA" in gpsData:
@@ -171,14 +192,13 @@ if __name__ == "__main__":
             while True:
                 loc = self.get_data()
                 await self.socket.send_data(loc)
-                self.socket.gps_area.in_valid_area(loc)
                 await asyncio.sleep(polling_rate)
 
     async def main():
         print("running")
         #Create SocketIO and GPSSensor
         #http://165.227.146.155:3002
-        socket = GPSSocket('http://localhost:9000', 123456, 1)
+        socket = GPSSocket('http://localhost:9090', 123456, 1)
         gps_sensor = MyGPSSensor(socket)
 
         #Create new task and add it to the event loop
