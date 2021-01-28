@@ -4,6 +4,10 @@ import socketio
 import asyncio
 from dataclasses import dataclass
 
+from shapely.geometry import Point, Polygon, LinearRing
+from shapely.ops import nearest_points
+from math import radians, cos, sin, asin, sqrt
+
 """
 General:
  - Python version 3.7
@@ -14,6 +18,7 @@ General:
  - pyserial and pyserial-asyncio could be beneficial if serial communication is required
  (if i2c is better use that) 
  https://github.com/pyserial/pyserial-asyncio
+ -Shapely 1.7.1 
 """
 
 @dataclass
@@ -32,11 +37,30 @@ class GPSArea:
     """Handles the calculations for the boundary data"""
 
     def __init__(self, gps_area):
-            self.gps_area = gps_area
+    	self.gps_area = gps_area
 
     def in_valid_area(self, location):
-        """Returns True if inside the valid area, False if not"""
-        return True
+    	boundary_area = Polygon(self.gps_area)
+    	loc = Point(location)
+    	"""Returns True if inside the valid area, False if not"""
+    	return boundary_area.contains(loc)
+
+    def distance_to_border(self, location):
+        border = LinearRing(self.gps_area)
+        loc = Point(location)
+        p1, _ = nearest_points(border, loc)
+
+        def haversine(lon1, lat1, lon2, lat2):
+            lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+            dlon = lon2 - lon1
+            dlat = lat2 - lat1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * asin(sqrt(a))
+            r = 6371000
+            return c * r
+
+        distance = haversine(loc.x, loc.y, p1.x, p1.y)
+        return distance
 
 
 class gpsSocket:
