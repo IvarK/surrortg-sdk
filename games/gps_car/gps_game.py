@@ -1,4 +1,4 @@
-from games.gps_car.gps import gpsSocket
+from games.gps_car.gps import GPSSocket
 from games.gps_car.gps import GPSSensor
 from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
@@ -190,13 +190,24 @@ class CarGame(Game):
         )
 
         # create gpsSocket and custom GPSSensor
+        # 'http://localhost:9000'
         self.gps_socket = GPSSocket('http://165.227.146.155:3002', self.io._config["device_id"], self.io._config["game_engine"]["id"]) # pass all required parameters here
-        self.gps_sensor = MyGPSSensor(gps_socket, self.io, self.motor)
-        #Create new task and add it to the event loop
-        event_loop = asyncio.get_event_loop()
-        task = event_loop.create_task(gps_sensor.run(1))
+        self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
+        #Create new task
+        self.task = asyncio.create_task(self.gps_sensor.run(1))
+        #Add a done callback
+        self.task.add_done_callback(self.run_done_cb)
+
+    def run_done_cb(self, fut):
+        # make program end if GPSSensor's run() raises errors
+        if not fut.cancelled() and fut.exception() is not None:
+            import traceback, sys
+            e = fut.exception()
+            logging.error("".join(traceback.format_exception(None, e, e.__traceback__)))
+            sys.exit(1)
 
     async def on_exit(self, reason, exception):
+        self.task.cancel()
         await self.gps_sensor.disconnect()
         await self.gps_socket.post_run()
         await self.motor.shutdown()
