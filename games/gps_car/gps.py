@@ -41,13 +41,13 @@ class GPSArea:
 
     def in_valid_area(self, location):
         boundary_area = Polygon(self.gps_area)
-        loc = Point([location.lat, location.lon])
+        loc = Point([location.lon, location.lat])
         """Returns True if inside the valid area, False if not"""
         return boundary_area.contains(loc)
 
     def distance_to_border(self, location):
         border = LinearRing(self.gps_area)
-        loc = Point([location.lat, location.lon])
+        loc = Point([location.lon, location.lat])
         p1, _ = nearest_points(border, loc)
 
         def haversine(lon1, lat1, lon2, lat2):
