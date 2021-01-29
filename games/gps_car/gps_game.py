@@ -4,6 +4,9 @@ from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
 import logging
+import asyncio
+import shapely
+import serial
 
 MOTOR_PIN = 16
 SERVO_PIN = 12
