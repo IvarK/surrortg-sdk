@@ -144,9 +144,7 @@ class MyGPSSensor(GPSSensor):
         BUFFER_DISTANCE = 10000000000  # distance to border that triggers actions (meters) (this should probably come with area data)
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
-        print("Buffer is:", BUFFER_DISTANCE)
         print("Distance to border:", distance_to_border)
-        print("Too close to border? ", close_to_border)
         if inside and not close_to_border and self.slowdown:
             ShiftGear(self.motor).drive_actuator(10, seat=0)
             self.slowdown = False
