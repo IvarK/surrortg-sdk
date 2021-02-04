@@ -146,7 +146,7 @@ class MyGPSSensor(GPSSensor):
         slowdown = False # Placeholder for real implementation
         print("Buffer is:", BUFFER_DISTANCE)
         print("Distance to border:", distance_to_border)
-        print("Too close to border? "close_to_border)
+        print("Too close to border? ", close_to_border)
         if inside and not close_to_border and slowdown:
             slowdown = False
             print("To normal speed")  # back to normal speed
