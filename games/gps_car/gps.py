@@ -109,7 +109,7 @@ class GPSSocket:
 class GPSSensor:
     """Do not implement __init__, as this is more convinient for the users"""
 
-    testing = False
+    testing = True
 
     async def connect(self, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method

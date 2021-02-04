@@ -134,7 +134,7 @@ class MyGPSSensor(GPSSensor):
     async def on_data(self, data):
         DANGER_ZONE = 5 ## minimum distance to border that triggers actions or warnings (meters)
         inside = self.gps_socket.gps_area.in_valid_area(data)
-        close_to_border = self.gps_socket.gps_area.distance_to_border < DANGER_ZONE
+        close_to_border = self.gps_socket.gps_area.distance_to_border(data) < DANGER_ZONE
         if not self.inputs_enabled and inside:
             self.io.enable_input(0) # enables inputs
             self.inputs_enabled = True
