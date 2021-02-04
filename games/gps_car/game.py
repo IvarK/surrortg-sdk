@@ -129,6 +129,7 @@ class MyGPSSensor(GPSSensor):
         self.io = io
         self.motor = motor
         self.inputs_enabled = True  # call enable/disable inputs only when needed
+        self.slowdown = False
 
     async def on_data(self, data):
         inside = self.gps_socket.gps_area.in_valid_area(data)
@@ -143,7 +144,6 @@ class MyGPSSensor(GPSSensor):
         BUFFER_DISTANCE = 10000000000  # distance to border that triggers actions (meters) (this should probably come with area data)
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
-        slowdown = False
         print("Buffer is:", BUFFER_DISTANCE)
         print("Distance to border:", distance_to_border)
         print("Too close to border? ", close_to_border)
@@ -151,7 +151,7 @@ class MyGPSSensor(GPSSensor):
             ShiftGear(self.motor).drive_actuator(10, seat=0)
             slowdown = False
             print("To normal speed") 
-        elif inside and close_to_border and not slowdown: # and not slowdown enabled
+        elif inside and close_to_border and not slowdown:
             ShiftGear(self.motor).drive_actuator(-10, seat=0)
             slowdown = True
             print("Slowing down") # slowdown the robot
