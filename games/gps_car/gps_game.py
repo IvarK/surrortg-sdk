@@ -132,10 +132,15 @@ class MyGPSSensor(GPSSensor):
         self.inputs_enabled = True # call enable/disable inputs only when needed
 
     async def on_data(self, data):
+        DANGER_ZONE = 5 ## minimum distance to border that triggers actions or warnings (meters)
         inside = self.gps_socket.gps_area.in_valid_area(data)
+        close_to_border = self.gps_socket.gps_area.distance_to_border < DANGER_ZONE
         if not self.inputs_enabled and inside:
             self.io.enable_input(0) # enables inputs
             self.inputs_enabled = True
+            if close_to_border:
+                print("TURN AWAY - GETTING TOO CLOSE TO BORDER")
+                print("Distance to border:", self.gps_socket.gps_area.distance_to_border)
         elif self.inputs_enabled and not inside:
             self.io.disable_input(0) # disables inputs
             await self.motor.drive_actuator(0, seat=0) # stop the car (ShiftGear can be used if slowing down is wanted)
@@ -192,8 +197,8 @@ class CarGame(Game):
         )
 
         # create gpsSocket and custom GPSSensor
-        # 'http://localhost:9090'
-        self.gps_socket = GPSSocket('http://165.227.146.155:3002', self.io._config["device_id"], self.io._config["game_engine"]["id"]) # pass all required parameters here
+        # 'http://165.227.146.155:3002'
+        self.gps_socket = GPSSocket('http://localhost:9090', self.io._config["device_id"], self.io._config["game_engine"]["id"]) # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         #Create new task
         self.task = asyncio.create_task(self.gps_sensor.run(1))
