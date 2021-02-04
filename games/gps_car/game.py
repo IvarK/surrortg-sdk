@@ -141,16 +141,15 @@ class MyGPSSensor(GPSSensor):
             # stop the car (ShiftGear can be used if slowing down is wanted)
             await self.motor.drive_actuator(0, seat=0)
             self.inputs_enabled = False
-        BUFFER_DISTANCE = 10000000000  # distance to border that triggers actions (meters) (this should probably come with area data)
+        BUFFER_DISTANCE = 100000000  # distance to border that triggers actions (meters) (this should probably come with area data)
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
-        print("Distance to border:", distance_to_border)
         if inside and not close_to_border and self.slowdown:
-            await ShiftGear(self.motor).drive_actuator(10, seat=0)
+            await ShiftGear(self.motor).drive_actuator(1, seat=0)
             self.slowdown = False
             print("To normal speed") 
         elif inside and close_to_border and not self.slowdown:
-            await ShiftGear(self.motor).drive_actuator(-10, seat=0)
+            await ShiftGear(self.motor).drive_actuator(-1, seat=0)
             self.slowdown = True
             print("Slowing down") # slowdown the robot
             
