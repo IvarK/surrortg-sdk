@@ -141,6 +141,7 @@ class MyGPSSensor(GPSSensor):
             await self.motor.drive_actuator(0, seat=0)
             self.inputs_enabled = False
         BUFFER_DISTANCE = 10000000000  # distance to border that triggers actions (meters) (this should probably come with area data)
+        distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
         if inside and not close to border: # and slowdown enabled
             print("normal speed")  # back to normal speed
