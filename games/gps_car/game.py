@@ -146,11 +146,11 @@ class MyGPSSensor(GPSSensor):
         close_to_border = distance_to_border < BUFFER_DISTANCE    
         print("Distance to border:", distance_to_border)
         if inside and not close_to_border and self.slowdown:
-            ShiftGear(self.motor).drive_actuator(10, seat=0)
+            await ShiftGear(self.motor).drive_actuator(10, seat=0)
             self.slowdown = False
             print("To normal speed") 
         elif inside and close_to_border and not self.slowdown:
-            ShiftGear(self.motor).drive_actuator(-10, seat=0)
+            await ShiftGear(self.motor).drive_actuator(-10, seat=0)
             self.slowdown = True
             print("Slowing down") # slowdown the robot
             
