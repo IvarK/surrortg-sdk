@@ -91,6 +91,7 @@ class GPSSocket:
             "alt": data.alt,
             "lat": data.lat,
             "long": data.lon,
+            "distance": self.gps_area.distance_to_border(data), 
         }
         await self.sio.emit("update_location", x)
 
@@ -135,7 +136,7 @@ class GPSSensor:
         (can be async def if needed)
         """
         if self.testing:
-            return GPSData(0.1, 0.1, -10000)
+            return GPSData(5, 5, -10000)
         while True:
             gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
