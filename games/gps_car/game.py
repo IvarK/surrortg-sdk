@@ -129,7 +129,7 @@ class MyGPSSensor(GPSSensor):
         self.io = io
         self.motor = motor
         self.inputs_enabled = True  # call enable/disable inputs only when needed
-        self.slowdown = False
+        self.gear = 0
 
     async def on_data(self, data):
         inside = self.gps_socket.gps_area.in_valid_area(data)
@@ -141,15 +141,15 @@ class MyGPSSensor(GPSSensor):
             # stop the car (ShiftGear can be used if slowing down is wanted)
             await self.motor.drive_actuator(0, seat=0)
             self.inputs_enabled = False
-        BUFFER_DISTANCE = 100000000  # distance to border that triggers actions (meters) (this should probably come with area data)
+        BUFFER_DISTANCE = 1000000 # distance to border that triggers actions (meters) (this should probably come with area data)
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
-        if inside and not close_to_border and self.slowdown:
+        if inside and not close_to_border and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
-            self.slowdown = False
-        elif inside and close_to_border and not self.slowdown:
+            self.gear +=1
+        elif inside and close_to_border and self.gear > -5:
             await ShiftGear(self.motor).drive_actuator(-1, seat=0)
-            self.slowdown = True
+            self.gear -=1 
             
 
     async def pre_run(self):
