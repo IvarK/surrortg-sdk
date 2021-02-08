@@ -7,6 +7,7 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
+
 areaData = [(0,0),(0, 10), (10,10), (10,0)]
 
 @sio.event
@@ -20,7 +21,6 @@ def connect(sid, environ):
 @sio.event
 async def update_location(sid, data):
     print(f"received data :{data}")
-
 
 @sio.event
 def disconnect(sid):
