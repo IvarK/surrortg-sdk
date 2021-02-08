@@ -18,43 +18,46 @@ General:
  - pyserial and pyserial-asyncio could be beneficial if serial communication is required
  (if i2c is better use that) 
  https://github.com/pyserial/pyserial-asyncio
- -Shapely 1.7.1 
+ -Shapely 1.7
 """
+
 
 @dataclass
 class GPSData:
     """Represents data form the sensors
-    
+
     Can include also speed, acceleration, angles etc.
     This is just for position
     """
+
     lat: float
     lon: float
     alt: float
+
 
 class GPSArea:
 
     """Handles the calculations for the boundary data"""
 
     def __init__(self, gps_area):
-    	self.gps_area = gps_area
+        self.gps_area = gps_area
 
     def in_valid_area(self, location):
-    	boundary_area = Polygon(self.gps_area)
-    	loc = Point(location)
-    	"""Returns True if inside the valid area, False if not"""
-    	return boundary_area.contains(loc)
+        boundary_area = Polygon(self.gps_area)
+        loc = Point([location.lon, location.lat])
+        """Returns True if inside the valid area, False if not"""
+        return boundary_area.contains(loc)
 
     def distance_to_border(self, location):
         border = LinearRing(self.gps_area)
-        loc = Point(location)
+        loc = Point([location.lon, location.lat])
         p1, _ = nearest_points(border, loc)
 
         def haversine(lon1, lat1, lon2, lat2):
             lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
             dlon = lon2 - lon1
             dlat = lat2 - lat1
-            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
             c = 2 * asin(sqrt(a))
             r = 6371000
             return c * r
@@ -63,40 +66,53 @@ class GPSArea:
         return distance
 
 
-class gpsSocket:
+class GPSSocket:
 
     sio = socketio.AsyncClient()
 
-    def __init__(self, robot_id):
+    def __init__(self, url, robot_id, game_id):
+        self.url = url
         self.robot_id = robot_id
+        self.game_id = game_id
 
     @sio.event
-    def boundary_data(data):
-        print('boundary data received: ', data)
+    def boundary_data(self, data):
+        print("boundary data received: ", data)
+        self.gps_area = GPSArea(data["data"])
+
+    def get_query_url(self, url):
+        self.url += (
+            f"?type=robot&game_id={self.game_id}&robot_id={self.robot_id}"
+        )
 
     async def send_data(self, data):
         x = {
-                "robot_id":  self.robot_id,
-                "alt": data.alt, 
-                "lat":   data.lat,
-                "long": data.lon 
-            }
-        #print("SENDING DATA!")
-        await self.sio.emit('update_location', x)
+            "robot_id": self.robot_id,
+            "alt": data.alt,
+            "lat": data.lat,
+            "long": data.lon,
+            "distance": self.gps_area.distance_to_border(data), 
+        }
+        await self.sio.emit("update_location", x)
 
     async def connect(self):
-        #For testing locally
-        await self.sio.connect('http://localhost:5000')
-        #await self.sio.connect('http://165.227.146.155:3002?type=robot&game_id=0&robot_id=123456')
+        # Link the handler to the GPSSocket class, allows the use of 'self'
+        self.sio.on("boundary_data", self.boundary_data)
+        # For testing locally
+        if "localhost" not in self.url:
+            self.get_query_url(self.url)
+        await self.sio.connect(self.url)
 
     async def disconnect(self):
         await self.sio.disconnect()
 
-class GPSSensor:
-    """Do not implement __init__, as this is more convinient for the users
-    """
 
-    async def connect(self, polling_rate=1, pins="SOME_DEFAULT_PINS"):
+class GPSSensor:
+    """Do not implement __init__, as this is more convinient for the users"""
+
+    testing = False
+
+    async def connect(self, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method
 
         Any required parameters can be passed to __init__ also (pins, etc.).
@@ -105,12 +121,12 @@ class GPSSensor:
         """
 
         self.ser = serial.Serial(
-            port='/dev/ttyS0', 
-            baudrate = 9600,
+            port="/dev/ttyS0",
+            baudrate=9600,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
             bytesize=serial.EIGHTBITS,
-            timeout=1
+            timeout=1,
         )
 
     def get_data(self):
@@ -119,9 +135,10 @@ class GPSSensor:
         After connect, this method should be called according to the polling rate
         (can be async def if needed)
         """
-        return GPSData(0, 0, -10000)
+        if self.testing:
+            return GPSData(5, 5, -10000)
         while True:
-            gpsData=str(self.ser.readline())
+            gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
                 try:
 
@@ -130,18 +147,18 @@ class GPSSensor:
 
                     latitude = gpsList[2]
                     latChar = gpsList[3]
-                    degreeLat = int(float(latitude)/100)
+                    degreeLat = int(float(latitude) / 100)
                     secondLat = float(latitude) - degreeLat * 100
-                    latDec = degreeLat + secondLat/60
-                    if (latChar == "S"):
+                    latDec = degreeLat + secondLat / 60
+                    if latChar == "S":
                         latDec = -latDec
 
                     longitude = gpsList[4]
                     longChar = gpsList[5]
-                    degreeLong = int(float(longitude)/100)
+                    degreeLong = int(float(longitude) / 100)
                     secondLong = float(longitude) - degreeLong * 100
-                    longDec = degreeLong + secondLong/60
-                    if(longChar == "W"):
+                    longDec = degreeLong + secondLong / 60
+                    if longChar == "W":
                         longDec = -longDec
 
                     alt = gpsList[9]
@@ -152,7 +169,7 @@ class GPSSensor:
 
     async def on_data(self, data):
         """Users should override this method to keep up with changes
-        
+
         For example they could pass the GPSData to GPSArea.in_valid_area
         """
         pass
@@ -161,16 +178,17 @@ class GPSSensor:
         """Stop polling, connections, release resources"""
         pass
 
+
 if __name__ == "__main__":
     # Example usage:
 
     # create custom gps sensor
     class MyGPSSensor(GPSSensor):
-        
         def __init__(self, socket):
             self.socket = socket
 
         async def pre_run(self):
+            self.testing = True
             await self.socket.connect()
 
         async def post_run(self):
@@ -181,23 +199,24 @@ if __name__ == "__main__":
             while True:
                 loc = self.get_data()
                 await self.socket.send_data(loc)
-                await asyncio.sleep(1)
+                await asyncio.sleep(polling_rate)
 
     async def main():
         print("running")
-        #Create SocketIO and GPSSensor
-        socket = gpsSocket(123456)
+        # Create SocketIO and GPSSensor
+        # "http://localhost:9090"
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, 1)
         gps_sensor = MyGPSSensor(socket)
 
-        #Create new task and add it to the event loop
+        # Create new task and add it to the event loop
         event_loop = asyncio.get_event_loop()
         task = event_loop.create_task(gps_sensor.run(1))
-        
+
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
         await gps_sensor.post_run()
         print("main loop ended")
-        
+
         await gps_sensor.disconnect()
-        
+
     asyncio.run(main())

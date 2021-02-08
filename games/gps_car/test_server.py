@@ -7,11 +7,14 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
+
+areaData = [(0,0),(0, 10), (10,10), (10,0)]
+
 @sio.event
 def connect(sid, environ):
     print('connect ', sid)
     asyncio.run_coroutine_threadsafe(
-        sio.emit('boundary_data', {'data': 'foobar'}),
+        sio.emit('boundary_data', {'data': areaData}),
         asyncio.get_event_loop(),
     )
 
@@ -24,4 +27,4 @@ def disconnect(sid):
     print('disconnect ', sid)
 
 if __name__ == "__main__":
-    web.run_app(app, port=5000)
+    web.run_app(app, port=9090)
