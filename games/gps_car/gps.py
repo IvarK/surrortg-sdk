@@ -2,6 +2,7 @@ import time
 import serial
 import socketio
 import asyncio
+import jwt
 from dataclasses import dataclass
 
 from shapely.geometry import Point, Polygon, LinearRing
@@ -66,6 +67,7 @@ class GPSArea:
 class GPSSocket:
 
     sio = socketio.AsyncClient()
+    secret = "asd"
 
     def __init__(self, url, robot_id, game_id):
         self.url = url
@@ -73,7 +75,8 @@ class GPSSocket:
         self.game_id = game_id
 
     @sio.event
-    def boundary_data(self, data):
+    def boundary_data(self, encoded_jwt):
+        data = jwt.decode(encoded_jwt, self.secret, algorithms=["HS256"])
         print('boundary data received: ', data)
         self.gps_area = GPSArea(data["data"])
 
@@ -87,7 +90,8 @@ class GPSSocket:
                 "lat":   data.lat,
                 "long": data.lon 
             }
-        await self.sio.emit('update_location', x)
+        encoded_jwt = jwt.encode(x, self.secret, algorithm="HS256")
+        await self.sio.emit('update_location', encoded_jwt)
 
     async def connect(self):
         #Link the handler to the GPSSocket class, allows the use of 'self'
