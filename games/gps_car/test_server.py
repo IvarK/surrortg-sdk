@@ -9,7 +9,7 @@ app = web.Application()
 sio.attach(app)
 
 secret = "asd"
-areaData = [(1,1),(-1, 1), (-1,-1), (1,-1)]
+areaData = [(0,0),(0, 10), (10,10), (10,0)]
 
 @sio.event
 def connect(sid, environ):

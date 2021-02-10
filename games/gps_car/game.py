@@ -4,6 +4,9 @@ from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
 import logging
+import asyncio
+import shapely
+import serial
 
 MOTOR_PIN = 16
 SERVO_PIN = 12
@@ -120,23 +123,34 @@ class ShiftGear(LinearActuator):
             await self.actuator.increase_delta(self.increment)
 
 
-
 class MyGPSSensor(GPSSensor):
     def __init__(self, gps_socket, io, motor):
         self.gps_socket = gps_socket
         self.io = io
         self.motor = motor
-        self.inputs_enabled = True # call enable/disable inputs only when needed
+        self.inputs_enabled = True  # call enable/disable inputs only when needed
+        self.gear = 0  # counter for slowing down/speeding back up 
 
     async def on_data(self, data):
         inside = self.gps_socket.gps_area.in_valid_area(data)
         if not self.inputs_enabled and inside:
-            self.io.enable_input(0) # enables inputs
+            self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
         elif self.inputs_enabled and not inside:
-            self.io.disable_input(0) # disables inputs
-            await self.motor.drive_actuator(0, seat=0) # stop the car (ShiftGear can be used if slowing down is wanted)
+            self.io.disable_input(0)  # disables inputs
+            await self.motor.drive_actuator(0, seat=0) # stop the car 
             self.inputs_enabled = False
+        BUFFER_DISTANCE = 1000000 # distance to border that triggers actions (meters) (this should probably come with area data)
+        SLOWING_FACTOR = 7 # controls how slow robot will eventually get near border, increase to make robot slower
+        distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
+        close_to_border = distance_to_border < BUFFER_DISTANCE    
+        if inside and not close_to_border and self.gear < 0:
+            await ShiftGear(self.motor).drive_actuator(1, seat=0)
+            self.gear +=1
+        elif inside and close_to_border and self.gear > SLOWING_FACTOR: 
+            await ShiftGear(self.motor).drive_actuator(-1, seat=0)
+            self.gear -=1 
+            
 
     async def pre_run(self):
         await self.gps_socket.connect()
@@ -152,8 +166,9 @@ class MyGPSSensor(GPSSensor):
             await self.on_data(loc)
             await asyncio.sleep(polling_rate)
 
+
 class CarGame(Game):
-    
+
     async def on_init(self):
 
         """First initialize the pigpio class. For this you have to have
@@ -189,20 +204,29 @@ class CarGame(Game):
         )
 
         # create gpsSocket and custom GPSSensor
-        # 'http://localhost:9090'
-        self.gps_socket = GPSSocket('http://165.227.146.155:3002', self.io._config["device_id"], self.io._config["game_engine"]["id"]) # pass all required parameters here
+        # http://localhost:9090'
+        self.gps_socket = GPSSocket(
+            'http://165.227.146.155:3002',
+            self.io._config["device_id"],
+            self.io._config["game_engine"]["id"])  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
-        #Create new task
+        # Create new task
         self.task = asyncio.create_task(self.gps_sensor.run(1))
-        #Add a done callback
+        # Add a done callback
         self.task.add_done_callback(self.run_done_cb)
 
     def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
         if not fut.cancelled() and fut.exception() is not None:
-            import traceback, sys
+            import traceback
+            import sys
             e = fut.exception()
-            logging.error("".join(traceback.format_exception(None, e, e.__traceback__)))
+            logging.error(
+                "".join(
+                    traceback.format_exception(
+                        None,
+                        e,
+                        e.__traceback__)))
             sys.exit(1)
 
     async def on_exit(self, reason, exception):
@@ -212,6 +236,7 @@ class CarGame(Game):
         await self.motor.shutdown()
         await self.steering.shutdown()
         self.pi.stop()
+
 
 # And now you are ready to play!
 if __name__ == "__main__":
