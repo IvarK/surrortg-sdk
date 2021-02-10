@@ -66,7 +66,6 @@ class GPSArea:
         distance = haversine(loc.x, loc.y, p1.x, p1.y)
         return distance
 
-
 class GPSSocket:
 
     sio = socketio.AsyncClient()
@@ -76,12 +75,12 @@ class GPSSocket:
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-
-    @sio.event
+    
+    @sio.event(namespace='/robot')
     def boundary_data(self, data):
-        print('boundary data received: ', data)
-        self.gps_area = GPSArea(data["data"])
-
+        print("Received data: ", data)
+        self.gps_area = GPSArea(data['points'])
+    
     def get_query_url(self, url):
         data = {
                 "role" : 'location',
@@ -105,7 +104,9 @@ class GPSSocket:
 
     async def connect(self):
         # Link the handler to the GPSSocket class, allows the use of 'self'
-        self.sio.on("boundary_data", self.boundary_data)
+        #hold = {'_id': '602408525910da0d98ab2780', 'game_id': '0', 'points': [[-11.40594059405937, 27.54411672839069], [-60.59405940594056, -10.828519650211135], [49.54455445544556, 5.848726834192107], [-11.40594059405937, 27.54411672839069]]}
+        self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
+
         # For testing locally
         if "localhost" not in self.url:
             self.get_query_url(self.url)
@@ -222,7 +223,7 @@ if __name__ == "__main__":
         task = event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(15)
+        await asyncio.sleep(10)
         await gps_sensor.post_run()
         print("main loop ended")
 
