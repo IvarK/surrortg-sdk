@@ -2,6 +2,7 @@ import time
 import serial
 import socketio
 import asyncio
+import jwt
 from dataclasses import dataclass
 
 from shapely.geometry import Point, Polygon, LinearRing
@@ -65,43 +66,52 @@ class GPSArea:
         distance = haversine(loc.x, loc.y, p1.x, p1.y)
         return distance
 
-
 class GPSSocket:
 
     sio = socketio.AsyncClient()
+    secret = "asd"
 
     def __init__(self, url, robot_id, game_id):
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-
-    @sio.event
+    
+    @sio.event(namespace='/robot')
     def boundary_data(self, data):
-        print("boundary data received: ", data)
-        self.gps_area = GPSArea(data["data"])
-
+        print("Received data: ", data)
+        self.gps_area = GPSArea(data['points'])
+    
     def get_query_url(self, url):
+        data = {
+                "role" : 'location',
+                "gameId" : self.game_id,
+                "robotId":  self.robot_id
+                }
+        encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
         self.url += (
-            f"?type=robot&game_id={self.game_id}&robot_id={self.robot_id}"
+            f"?token={encoded_jwt}"
         )
 
     async def send_data(self, data):
         x = {
-            "robot_id": self.robot_id,
-            "alt": data.alt,
-            "lat": data.lat,
-            "long": data.lon,
-            "distance": self.gps_area.distance_to_border(data), 
-        }
-        await self.sio.emit("update_location", x)
+                "robot_id":  self.robot_id,
+                "alt": data.alt, 
+                "lat":   data.lat,
+                "long": data.lon
+            }
+        print("sending: ", x)
+        await self.sio.emit('location_data', x, namespace='/robot')
 
     async def connect(self):
         # Link the handler to the GPSSocket class, allows the use of 'self'
-        self.sio.on("boundary_data", self.boundary_data)
+        #hold = {'_id': '602408525910da0d98ab2780', 'game_id': '0', 'points': [[-11.40594059405937, 27.54411672839069], [-60.59405940594056, -10.828519650211135], [49.54455445544556, 5.848726834192107], [-11.40594059405937, 27.54411672839069]]}
+        self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
+
         # For testing locally
         if "localhost" not in self.url:
             self.get_query_url(self.url)
-        await self.sio.connect(self.url)
+        print(self.url)
+        await self.sio.connect(self.url, namespaces=['/robot'])
 
     async def disconnect(self):
         await self.sio.disconnect()
@@ -205,7 +215,7 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, 1)
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, 0)
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop

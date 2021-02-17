@@ -1,5 +1,6 @@
 import asyncio
 import socketio
+import jwt
 from aiohttp import web
 
 #Test server for a gps game
@@ -7,19 +8,21 @@ sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
 
-
+secret = "asd"
 areaData = [(0,0),(0, 10), (10,10), (10,0)]
 
 @sio.event
 def connect(sid, environ):
     print('connect ', sid)
+    encoded_jwt = jwt.encode({'data': areaData}, secret, algorithm="HS256")
     asyncio.run_coroutine_threadsafe(
-        sio.emit('boundary_data', {'data': areaData}),
+        sio.emit('boundary_data', encoded_jwt),
         asyncio.get_event_loop(),
     )
 
 @sio.event
-async def update_location(sid, data):
+async def update_location(sid, encoded_jwt):
+    data = jwt.decode(encoded_jwt, secret, algorithms=["HS256"])
     print(f"received data :{data}")
 
 @sio.event
