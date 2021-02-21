@@ -132,7 +132,6 @@ class MyGPSSensor(GPSSensor):
         self.gear = 0  # counter for slowing down/speeding back up 
 
     async def on_data(self, data):
-        print(self.gps_socket.gps_area)
         inside = self.gps_socket.gps_area.in_valid_area(data)
         if not self.inputs_enabled and inside:
             self.io.enable_input(0)  # enables inputs
@@ -144,6 +143,7 @@ class MyGPSSensor(GPSSensor):
         BUFFER_DISTANCE = 1000000 # distance to border that triggers actions (meters) (this should probably come with area data)
         SLOWING_FACTOR = 7 # controls how slow robot will eventually get near border, increase to make robot slower
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
+        print(distance_to_border)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
         if inside and not close_to_border and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
