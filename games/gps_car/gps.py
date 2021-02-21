@@ -71,11 +71,11 @@ class GPSSocket:
     sio = socketio.AsyncClient()
     secret = "asd"
 
-    def __init__(self, url, robot_id, game_id):
+    def __init__(self, url, robot_id, game_id, gps_area):
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-        self.gps_area = GPSArea([(0,0),(0, 6), (6,6), (6,0)])
+        self.gps_area = gps_area
 
     
     @sio.event(namespace='/robot')

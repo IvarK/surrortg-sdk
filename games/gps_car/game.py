@@ -1,5 +1,6 @@
 from games.gps_car.gps import GPSSocket
 from games.gps_car.gps import GPSSensor
+from games.gps_car.gps import GPSArea
 from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
@@ -210,6 +211,7 @@ class CarGame(Game):
             'http://localhost:9090',
             self.io._config["device_id"],
             self.io._config["game_engine"]["id"],
+            GPSArea([(0,0),(0, 6), (6,6), (6,0)])
             )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
