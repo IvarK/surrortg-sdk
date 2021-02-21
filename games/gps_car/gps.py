@@ -75,6 +75,7 @@ class GPSSocket:
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
+        self.gps_area = [(0,0),(0, 9), (9,9), (9,0)]
     
     @sio.event(namespace='/robot')
     def boundary_data(self, data):
