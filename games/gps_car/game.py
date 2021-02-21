@@ -204,9 +204,9 @@ class CarGame(Game):
         )
 
         # create gpsSocket and custom GPSSensor
-        # http://localhost:9090'
+        # http://165.227.146.155:3002'
         self.gps_socket = GPSSocket(
-            'http://165.227.146.155:3002',
+            'http://localhost:9090',
             self.io._config["device_id"],
             self.io._config["game_engine"]["id"])  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)

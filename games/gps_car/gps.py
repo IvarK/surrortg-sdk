@@ -120,7 +120,7 @@ class GPSSocket:
 class GPSSensor:
     """Do not implement __init__, as this is more convinient for the users"""
 
-    testing = False
+    testing = True
 
     async def connect(self, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method
@@ -214,8 +214,8 @@ if __name__ == "__main__":
     async def main():
         print("running")
         # Create SocketIO and GPSSensor
-        # "http://localhost:9090"
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, 0)
+        # "http://165.227.146.155:3002"
+        socket = GPSSocket("http://localhost:9090", 123456, 0)
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
