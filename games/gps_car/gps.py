@@ -78,7 +78,7 @@ class GPSSocket:
         self.gps_area = GPSArea([(0,0),(0, 6), (6,6), (6,0)])
 
     
-    @sio.event
+    @sio.event(namespace='/robot')
     def boundary_data(self, data):
         print("Received data: ", data)
         self.gps_area = GPSArea(data['points'])
