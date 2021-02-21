@@ -132,6 +132,7 @@ class MyGPSSensor(GPSSensor):
         self.gear = 0  # counter for slowing down/speeding back up 
 
     async def on_data(self, data):
+        print(self.gps_socket.gps_area)
         inside = self.gps_socket.gps_area.in_valid_area(data)
         if not self.inputs_enabled and inside:
             self.io.enable_input(0)  # enables inputs
