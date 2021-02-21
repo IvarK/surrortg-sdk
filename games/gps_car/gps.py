@@ -75,7 +75,7 @@ class GPSSocket:
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-        self.gps_area = GPSArea([(25.04076,60.293783),(25.0414252,60.2937299),(25.0406528,60.2932992),(25.0407493,60.2937033)])
+        self.gps_area = GPSArea([(25.04076,60.293783),(25.0414252,60.2937299),(25.0413394,60.293246),(25.0406528,60.2932992),(25.0407493,60.2937033)])
 
     
     @sio.event(namespace='/robot')
