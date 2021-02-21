@@ -148,7 +148,7 @@ class GPSSensor:
         (can be async def if needed)
         """
         if self.testing:
-            return GPSData(25.0410908, 60.2934853, -10000)
+            return GPSData(60.2934853, 25.0410908, -10000)
         while True:
             gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
