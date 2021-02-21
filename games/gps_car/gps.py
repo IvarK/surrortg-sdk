@@ -81,7 +81,6 @@ class GPSSocket:
     @sio.event(namespace='/robot')
     def boundary_data(self, data):
         print("Received data: ", data)
-        print(data)
         self.gps_area = GPSArea(data['points'])
     
     def get_query_url(self, url):
