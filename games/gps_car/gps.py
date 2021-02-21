@@ -75,7 +75,7 @@ class GPSSocket:
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-        self.gps_area = GPSArea([(0,0),(0, 6), (6,6), (6,0)])
+        self.gps_area = GPSArea([(25.04076,60.293783),(25.0414252,60.2937299,(25.0406528,60.2932992),(25.0407493,60.2937033)])
 
     
     @sio.event(namespace='/robot')
@@ -148,7 +148,7 @@ class GPSSensor:
         (can be async def if needed)
         """
         if self.testing:
-            return GPSData(5, 5, -10000)
+            return GPSData(25.0410908, 60.2934853, -10000)
         while True:
             gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
