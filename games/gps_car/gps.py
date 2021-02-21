@@ -71,7 +71,7 @@ class GPSSocket:
     sio = socketio.AsyncClient()
     secret = "asd"
 
-    def __init__(self, url, robot_id, game_id:
+    def __init__(self, url, robot_id, game_id):
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
