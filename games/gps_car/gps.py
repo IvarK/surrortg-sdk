@@ -200,7 +200,7 @@ if __name__ == "__main__":
             self.socket = socket
 
         async def pre_run(self):
-            self.testing = True
+            self.testing = False
             await self.socket.connect()
 
         async def post_run(self):
