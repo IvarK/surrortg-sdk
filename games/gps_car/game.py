@@ -155,6 +155,7 @@ class MyGPSSensor(GPSSensor):
 
     async def pre_run(self):
         await self.gps_socket.connect()
+        await self.connect()
 
     async def post_run(self):
         await self.gps_socket.disconnect()
