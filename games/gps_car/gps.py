@@ -4,10 +4,9 @@ import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
+from area.game_areas import GameArea
+from area.area_methods import in_valid_area
 
-from shapely.geometry import Point, Polygon, LinearRing
-from shapely.ops import nearest_points
-from math import radians, cos, sin, asin, sqrt
 
 """
 General:
@@ -36,36 +35,6 @@ class GPSData:
     alt: float
 
 
-class GPSArea:
-
-    """Handles the calculations for the boundary data"""
-
-    def __init__(self, gps_area):
-        self.gps_area = gps_area
-
-    def in_valid_area(self, location):
-        boundary_area = Polygon(self.gps_area)
-        loc = Point([location.lon, location.lat])
-        """Returns True if inside the valid area, False if not"""
-        return boundary_area.contains(loc)
-
-    def distance_to_border(self, location):
-        border = LinearRing(self.gps_area)
-        loc = Point([location.lon, location.lat])
-        p1, _ = nearest_points(border, loc)
-
-        def haversine(lon1, lat1, lon2, lat2):
-            lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-            dlon = lon2 - lon1
-            dlat = lat2 - lat1
-            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-            c = 2 * asin(sqrt(a))
-            r = 6371000
-            return c * r
-
-        distance = haversine(loc.x, loc.y, p1.x, p1.y)
-        return distance
-
 class GPSSocket:
 
     sio = socketio.AsyncClient()
@@ -75,12 +44,24 @@ class GPSSocket:
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-    
+        self.game_areas = []
+        self.stop_areas = []
+
     @sio.event(namespace='/robot')
     def boundary_data(self, data):
         print("Received data: ", data)
-        self.gps_area = GPSArea(data['points'])
+        """Call a self.method or a function inside area_methods depending on the label and pass the area data and other variables inside the data json"""
+        self.game_areas.append(GameArea(data['data']))
+
     
+    @sio.event(namespace='/robot')
+    def remove_boundary(self, data):
+        for area in self.game_areas:
+            if ( area.area_id == data['id']):
+                self.areas.remove(area)
+                break
+    
+
     def get_query_url(self, url):
         data = {
                 "role" : 'location',
@@ -104,7 +85,6 @@ class GPSSocket:
 
     async def connect(self):
         # Link the handler to the GPSSocket class, allows the use of 'self'
-        #hold = {'_id': '602408525910da0d98ab2780', 'game_id': '0', 'points': [[-11.40594059405937, 27.54411672839069], [-60.59405940594056, -10.828519650211135], [49.54455445544556, 5.848726834192107], [-11.40594059405937, 27.54411672839069]]}
         self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
 
         # For testing locally
@@ -215,7 +195,7 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, 0)
+        socket = GPSSocket("http://localhost:9090", 123456, 0)
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
@@ -223,7 +203,7 @@ if __name__ == "__main__":
         task = event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(10)
+        await asyncio.sleep(30)
         await gps_sensor.post_run()
         print("main loop ended")
 

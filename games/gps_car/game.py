@@ -132,24 +132,41 @@ class MyGPSSensor(GPSSensor):
         self.gear = 0  # counter for slowing down/speeding back up 
 
     async def on_data(self, data):
-        inside = self.gps_socket.gps_area.in_valid_area(data)
-        if not self.inputs_enabled and inside:
+
+        """Loop over the Game areas and change speed"""
+        player_inside_game_area = False
+        for area in self.gps_socket.areas:
+            inside = area_methods.in_valid_area(area, data)
+            if inside: 
+                area.player_in_area(self.gps_socket)
+                #if area.slowing factor is great enough, slow down.
+                #await ShiftGear(self.motor).drive_actuator(-1, seat=0)
+                #self.gear -=1 
+            if ( inside and not player_inside_game_area):
+                player_inside_game_area = True
+
+        """Loop over the Stop areas and disable inputs, if not inside any stop area enable inputs"""
+        player_inside_stop_area = False
+        for stop_area in self.gps_socket.stop_areas:
+            inside = area_methods.in_valid_area(area, data)
+            if inside: 
+                area.player_in_area(self)
+            if ( inside and not player_inside_stop_area):
+                player_inside_stop_area = True
+                self.io.disable_input(0)  # disables inputs
+                await self.motor.drive_actuator(0, seat=0) # stop the car 
+                self.inputs_enabled = False
+
+        """Player is not in danger, enable inputs"""
+        if not self.inputs_enabled and not player_inside_stop_area:
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
-        elif self.inputs_enabled and not inside:
-            self.io.disable_input(0)  # disables inputs
-            await self.motor.drive_actuator(0, seat=0) # stop the car 
-            self.inputs_enabled = False
-        BUFFER_DISTANCE = 1000000 # distance to border that triggers actions (meters) (this should probably come with area data)
-        SLOWING_FACTOR = 7 # controls how slow robot will eventually get near border, increase to make robot slower
-        distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
-        close_to_border = distance_to_border < BUFFER_DISTANCE    
-        if inside and not close_to_border and self.gear < 0:
+
+        """Player is not in any game are, raise speed to normal"""
+        if not player_inside_game_area and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
             self.gear +=1
-        elif inside and close_to_border and self.gear > SLOWING_FACTOR: 
-            await ShiftGear(self.motor).drive_actuator(-1, seat=0)
-            self.gear -=1 
+
             
 
     async def pre_run(self):
