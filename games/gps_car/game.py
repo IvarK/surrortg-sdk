@@ -1,5 +1,6 @@
 from games.gps_car.gps import GPSSocket
 from games.gps_car.gps import GPSSensor
+from games.gps_car.area.area_methods import in_valid_area
 from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
