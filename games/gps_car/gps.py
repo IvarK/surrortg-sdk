@@ -5,7 +5,7 @@ import asyncio
 import jwt
 from dataclasses import dataclass
 from .area.game_areas import GameArea, StopArea
-from .area.area_methods import in_valid_area
+from .area.area_methods import inside_area_effect
 
 
 """
@@ -51,15 +51,17 @@ class GPSSocket:
     def boundary_data(self, data):
         print("Received data: ", data)
         """Call a self.method or a function inside area_methods depending on the label and pass the area data and other variables inside the data json"""
-        self.game_areas.append(GameArea(data['data']))
+        #self.game_areas.append(GameArea(data['data']))
 
     @sio.event(namespace='/robot')
     def all_boundary_data(self, data):
         print("Received data: ", data)
         for area in data:
             if ( area['type'] == 'StopArea'):
+                print("New Stop Area")
                 self.stop_areas.append(StopArea(area))
             else:
+                print("New Game Area")
                 self.game_areas.append(GameArea(area))
     
     @sio.event(namespace='/robot')
@@ -135,7 +137,7 @@ class GPSSensor:
         (can be async def if needed)
         """
         if self.testing:
-            return GPSData(5, 5, -10000)
+            return GPSData(5, 15, -10000)
         while True:
             gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
@@ -198,13 +200,19 @@ if __name__ == "__main__":
             while True:
                 loc = self.get_data()
                 await self.socket.send_data(loc)
+                if self.socket.stop_areas and self.socket.game_areas:
+                    print("STOP AREA :")
+                    inside_area_effect(self.socket.stop_areas[0], loc) 
+                    print("GAME AREA :")
+                    inside_area_effect(self.socket.game_areas[0], loc)
+
                 await asyncio.sleep(polling_rate)
 
     async def main():
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, "0")
+        socket = GPSSocket("http://localhost:9010", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop

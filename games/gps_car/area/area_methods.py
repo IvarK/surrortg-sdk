@@ -2,14 +2,11 @@ from shapely.geometry import Point, Polygon, LinearRing
 from shapely.ops import nearest_points
 from math import radians, cos, sin, asin, sqrt
 
-def in_valid_area(game_area, location):
+def inside_area_effect(game_area, location):
     boundary_area = Polygon(game_area.area)
     loc = Point([location.lon, location.lat])
     """Returns True if inside the valid area, False if not"""
-    print("BOUNDARY AREA BOOLEAN: ",boundary_area.contains(loc))
-    print("GAME AREA BOOLEAN: " , game_area.reversed)
-    ans = boundary_area.contains(loc) is game_area.reversed
-    return ans
+    return boundary_area.contains(loc) is not game_area.reversed
 
 def distance_to_border(game_area, location):
     border = LinearRing(game_area.area)

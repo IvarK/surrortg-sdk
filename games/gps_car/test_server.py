@@ -17,11 +17,11 @@ props1 = {
 
 props2 = {
     'prop1': 'empty',
-    'slowing_factor': '7'
+    'slowing_factor': '3'
 }
 
 dataJSON = {
-    'uuid': "1337",
+    'uuid': "1",
     'label': 'test_area',
     'type': 'StopArea',
     'area': [[0,0],[0, 10], [10,10], [10,0]],
@@ -29,7 +29,7 @@ dataJSON = {
 }
 
 dataJSONTWO = {
-    'uuid': "9999",
+    'uuid': "2",
     'label': 'test_area2',
     'type': 'GameArea',
     'area': [[0,0],[0, 20], [20,20], [20,0]],

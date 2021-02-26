@@ -1,6 +1,6 @@
 from games.gps_car.gps import GPSSocket
 from games.gps_car.gps import GPSSensor
-from games.gps_car.area.area_methods import in_valid_area
+from games.gps_car.area.area_methods import inside_area_effect
 from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
@@ -135,39 +135,38 @@ class MyGPSSensor(GPSSensor):
     async def on_data(self, data):
 
         """Loop over the Game areas and change speed"""
-        player_inside_game_area = False
-        for area in self.gps_socket.game_areas:
-            inside = in_valid_area(area, data)
-            if inside:
+        player_affected_by_game_area = False
+        for game_area in self.gps_socket.game_areas:
+            effects_robot = inside_area_effect(game_area, data)
+            if effects_robot:
                 print("ROBOT IN SLOWING AREA")  
-                area.player_in_area(self.gps_socket)
+                game_area.player_in_area(self.gps_socket)
+                player_affected_by_game_area = True
                 #if area.slowing factor is great enough, slow down.
-                if  self.gear > -area.slowing_factor:
+                if  self.gear < game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
-                    self.gear -=1 
-            if inside and not player_inside_game_area:
-                player_inside_game_area = True
+                    self.gear -=1
 
         """Loop over the Stop areas and disable inputs, if not inside any stop area enable inputs"""
-        player_inside_stop_area = False
+        player_affected_by_stop_area = False
         for stop_area in self.gps_socket.stop_areas:
-            inside = in_valid_area(area, data)
-            if inside:
+            effects_robot = inside_area_effect(stop_area, data)
+            if effects_robot:
                 print("ROBOT IN FORBIDDEN AREA") 
-                area.player_in_area(self)
-            if inside and not player_inside_stop_area:
-                player_inside_stop_area = True
+                stop_area.player_in_area(self.gps_socket)
+            if effects_robot and not player_affected_by_stop_area:
+                player_affected_by_stop_area = True
                 self.io.disable_input(0)  # disables inputs
                 await self.motor.drive_actuator(0, seat=0) # stop the car 
                 self.inputs_enabled = False
 
         """Player is not in danger, enable inputs"""
-        if not self.inputs_enabled and not player_inside_stop_area:
+        if not self.inputs_enabled and not player_affected_by_stop_area:
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
 
         """Player is not in any game are, raise speed to normal"""
-        if not player_inside_game_area and self.gear < 0:
+        if not player_affected_by_game_area and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
             self.gear +=1
 
