@@ -138,7 +138,8 @@ class MyGPSSensor(GPSSensor):
         player_inside_game_area = False
         for area in self.gps_socket.game_areas:
             inside = in_valid_area(area, data)
-            if inside: 
+            if inside:
+                print("ROBOT IN SLOWING AREA")  
                 area.player_in_area(self.gps_socket)
                 #if area.slowing factor is great enough, slow down.
                 if  self.gear > -area.slowing_factor:
@@ -151,7 +152,8 @@ class MyGPSSensor(GPSSensor):
         player_inside_stop_area = False
         for stop_area in self.gps_socket.stop_areas:
             inside = in_valid_area(area, data)
-            if inside: 
+            if inside:
+                print("ROBOT IN FORBIDDEN AREA") 
                 area.player_in_area(self)
             if inside and not player_inside_stop_area:
                 player_inside_stop_area = True
