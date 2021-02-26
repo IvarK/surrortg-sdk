@@ -140,9 +140,8 @@ class MyGPSSensor(GPSSensor):
             self.io.disable_input(0)  # disables inputs
             await self.motor.drive_actuator(0, seat=0) # stop the car 
             self.inputs_enabled = False
-            self.gear = 0
         BUFFER_DISTANCE = 4# distance to border that triggers actions (meters) (this should probably come with area data)
-        SLOWING_FACTOR = 7 # controls how slow robot will eventually get near border, increase to make robot slower
+        SLOWING_FACTOR = 4 # controls how slow robot will eventually get near border, increase to make robot slower
         distance_to_border = self.gps_socket.gps_area.distance_to_border(data)
         print(distance_to_border)
         close_to_border = distance_to_border < BUFFER_DISTANCE    
