@@ -15,8 +15,8 @@ General:
  - use python-socketio's async client for the communication:
  https://python-socketio.readthedocs.io/en/latest/api.html#asyncclient-class
  https://github.com/miguelgrinberg/python-socketio
- -Pyserial
- -Shapely 1.7
+ -pyserial 3.5
+ -shapely 1.7
 """
 
 
