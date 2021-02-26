@@ -27,7 +27,7 @@ class StopArea():
     def helper(self, properties):
         print(properties)
         try:
-            if (properties['reversed'] == 'true'):
+            if (properties['reversed']):
                 self.reversed = True
         except KeyError:
             pass
@@ -67,7 +67,7 @@ class GameArea():
         """look over the properties and add them"""
         print(properties)
         try:
-            if (properties['reversed'] == 'true'):
+            if (properties['reversed']):
                 self.reversed = True
         except KeyError:
             print('KeyError')
