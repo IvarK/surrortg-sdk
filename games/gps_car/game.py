@@ -137,7 +137,7 @@ class MyGPSSensor(GPSSensor):
         """Loop over the Game areas and change speed"""
         player_inside_game_area = False
         for area in self.gps_socket.game_areas:
-            inside = area_methods.in_valid_area(area, data)
+            inside = in_valid_area(area, data)
             if inside: 
                 area.player_in_area(self.gps_socket)
                 #if area.slowing factor is great enough, slow down.
@@ -150,7 +150,7 @@ class MyGPSSensor(GPSSensor):
         """Loop over the Stop areas and disable inputs, if not inside any stop area enable inputs"""
         player_inside_stop_area = False
         for stop_area in self.gps_socket.stop_areas:
-            inside = area_methods.in_valid_area(area, data)
+            inside = in_valid_area(area, data)
             if inside: 
                 area.player_in_area(self)
             if inside and not player_inside_stop_area:
