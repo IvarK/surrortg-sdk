@@ -143,7 +143,7 @@ class MyGPSSensor(GPSSensor):
                 game_area.player_in_area(self.gps_socket)
                 player_affected_by_game_area = True
                 #if area.slowing factor is great enough, slow down.
-                if  self.gear < game_area.slowing_factor:
+                if  self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     self.gear -=1
 
