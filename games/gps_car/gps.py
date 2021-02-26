@@ -4,8 +4,8 @@ import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
-from area.game_areas import GameArea, StopArea
-from area.area_methods import in_valid_area
+from .area.game_areas import GameArea, StopArea
+from .area.area_methods import in_valid_area
 
 
 """
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, 0)
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
