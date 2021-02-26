@@ -224,10 +224,11 @@ class CarGame(Game):
 
         # create gpsSocket and custom GPSSensor
         # http://localhost:9090'
+        print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
         self.gps_socket = GPSSocket(
             'http://165.227.146.155:3002',
             self.io._config["device_id"],
-            self.io._config["game_engine"]["id"])  # pass all required parameters here
+            0)  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
         self.task = asyncio.create_task(self.gps_sensor.run(1))
