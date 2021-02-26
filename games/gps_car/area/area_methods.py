@@ -6,7 +6,10 @@ def in_valid_area(game_area, location):
     boundary_area = Polygon(game_area.area)
     loc = Point([location.lon, location.lat])
     """Returns True if inside the valid area, False if not"""
-    return boundary_area.contains(loc) is game_area.reversed
+    print("BOUNDARY AREA BOOLEAN: ",boundary_area.contains(loc))
+    print("GAME AREA BOOLEAN: " , game_area.reversed)
+    ans = boundary_area.contains(loc) is game_area.reversed
+    return ans
 
 def distance_to_border(game_area, location):
     border = LinearRing(game_area.area)
