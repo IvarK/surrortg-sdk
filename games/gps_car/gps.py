@@ -4,7 +4,7 @@ import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
-from area.game_areas import GameArea
+from area.game_areas import GameArea, StopArea
 from area.area_methods import in_valid_area
 
 
@@ -53,6 +53,14 @@ class GPSSocket:
         """Call a self.method or a function inside area_methods depending on the label and pass the area data and other variables inside the data json"""
         self.game_areas.append(GameArea(data['data']))
 
+    @sio.event(namespace='/robot')
+    def all_boundary_data(self, data):
+        print("Received data: ", data)
+        for area in data:
+            if ( area['type'] == 'StopArea'):
+                self.stop_areas.append(StopArea(area))
+            else:
+                self.game_areas.append(GameArea(area))
     
     @sio.event(namespace='/robot')
     def remove_boundary(self, data):
@@ -86,6 +94,7 @@ class GPSSocket:
     async def connect(self):
         # Link the handler to the GPSSocket class, allows the use of 'self'
         self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
+        self.sio.on("all_boundary_data", self.all_boundary_data, namespace='/robot')
 
         # For testing locally
         if "localhost" not in self.url:
@@ -154,7 +163,7 @@ class GPSSensor:
                     alt = gpsList[9]
 
                     return GPSData(latDec, longDec, alt)
-                except ValueError:
+                except (ValueError, IndexError) as e:
                     return GPSData(0, 0, -10000)
 
     async def on_data(self, data):
@@ -195,7 +204,7 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://localhost:9090", 123456, 0)
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, 0)
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop

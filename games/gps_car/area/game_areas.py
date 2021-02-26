@@ -19,12 +19,18 @@ class StopArea():
         self.area = data['area']
         self.reversed = False
         self.helper(data['props'])
+        print("Stop Area attributes: ", self.reversed)
 
     def __eq__(self, other):
         return self.area_id == other.area_id
 
     def helper(self, properties):
-        pass
+        print(properties)
+        try:
+            if (properties['reversed'] == 'True'):
+                self.reversed = True
+        except KeyError:
+            pass
 
 
     def player_in_area(self, socket):
@@ -50,15 +56,28 @@ class GameArea():
         self.label = data['label']
         self.area = data['area']
         self.reversed = False
+        self.slowing_factor = 0
         self.helper(data['props'])
+        print("Game Area attributes: ", self.slowing_factor, self.reversed)
 
     def __eq__(self, other):
         return self.area_id == other.area_id
 
     def helper(self, properties):
         """look over the properties and add them"""
-        pass
-
+        print(properties)
+        try:
+            if (properties['reversed'] == 'True'):
+                self.reversed = True
+        except KeyError:
+            print('KeyError')
+            pass
+        try:
+            if (properties['slowing_factor']):
+                self.slowing_factor = int(properties['slowing_factor'])
+        except KeyError:
+            print('KeyError')
+            pass
 
     def player_in_area(self, socket):
         

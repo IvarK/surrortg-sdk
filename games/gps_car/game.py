@@ -1,5 +1,7 @@
 from games.gps_car.gps import GPSSocket
 from games.gps_car.gps import GPSSensor
+from games.gps_car.area.area_methods import in_valid_area
+from games.gps_car.area.game_areas import GameArea, StopArea
 from surrortg import Game  # First we need import the Game
 from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
@@ -135,14 +137,15 @@ class MyGPSSensor(GPSSensor):
 
         """Loop over the Game areas and change speed"""
         player_inside_game_area = False
-        for area in self.gps_socket.areas:
+        for area in self.gps_socket.game_areas:
             inside = area_methods.in_valid_area(area, data)
             if inside: 
                 area.player_in_area(self.gps_socket)
                 #if area.slowing factor is great enough, slow down.
-                #await ShiftGear(self.motor).drive_actuator(-1, seat=0)
-                #self.gear -=1 
-            if ( inside and not player_inside_game_area):
+                if  self.gear > -area.slowing_factor:
+                    await ShiftGear(self.motor).drive_actuator(-1, seat=0)
+                    self.gear -=1 
+            if inside and not player_inside_game_area:
                 player_inside_game_area = True
 
         """Loop over the Stop areas and disable inputs, if not inside any stop area enable inputs"""
@@ -151,7 +154,7 @@ class MyGPSSensor(GPSSensor):
             inside = area_methods.in_valid_area(area, data)
             if inside: 
                 area.player_in_area(self)
-            if ( inside and not player_inside_stop_area):
+            if inside and not player_inside_stop_area:
                 player_inside_stop_area = True
                 self.io.disable_input(0)  # disables inputs
                 await self.motor.drive_actuator(0, seat=0) # stop the car 
