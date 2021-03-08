@@ -5,7 +5,7 @@ import asyncio
 import jwt
 from dataclasses import dataclass
 from .area.game_areas import GameArea, StopArea
-from .area.area_methods import inside_area_effect
+from .area.area_methods import inside_area_effect, distance_to_border
 
 
 """
@@ -50,8 +50,12 @@ class GPSSocket:
     @sio.event(namespace='/robot')
     def boundary_data(self, data):
         print("Received data: ", data)
-        """Call a self.method or a function inside area_methods depending on the label and pass the area data and other variables inside the data json"""
-        #self.game_areas.append(GameArea(data['data']))
+        if ( area['type'] == 'StopArea'):
+            print("New Stop Area")
+            self.stop_areas.append(StopArea(area))
+        else:
+            print("New Game Area")
+            self.game_areas.append(GameArea(area))
 
     @sio.event(namespace='/robot')
     def all_boundary_data(self, data):
@@ -68,9 +72,35 @@ class GPSSocket:
     def remove_boundary(self, data):
         for area in self.game_areas:
             if ( area.area_id == data['id']):
-                self.areas.remove(area)
+                self.game_areas.remove(area)
+                break
+        for area in self.stop_areas:
+            if ( area.area_id == data['id']):
+                self.stop_areas.remove(area)
                 break
     
+    @sio.event(namespace='/robot')
+    def distance_to_area(self, data):
+        area = self.get_area(data)
+        if area :
+            dist = distance_to_border(area, loc)
+            self.sio.emit('distance_to_area', dist, namespace='/robot')
+    
+    @sio.event(namespace='/robot')
+    def inside_area(self, data):
+        area = self.get_area(data)
+        if area :
+            effect = inside_area_effect(area, loc)
+            self.sio.emit('distance_to_area', effect, namespace='/robot')
+
+    def get_area(self, data):
+        for area in self.game_areas:
+            if ( area.area_id == data['id']):
+                return area
+        for area in self.stop_areas:
+            if ( area.area_id == data['id']):
+                return area
+        return False
 
     def get_query_url(self, url):
         data = {
@@ -97,6 +127,9 @@ class GPSSocket:
         # Link the handler to the GPSSocket class, allows the use of 'self'
         self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
         self.sio.on("all_boundary_data", self.all_boundary_data, namespace='/robot')
+        self.sio.on("remove_boundary", self.remove_boundary, namespace='/robot')
+        self.sio.on("distance_to_area", self.distance_to_area, namespace='/robot')
+        self.sio.on("inside_area", self.inside_area, namespace='/robot')
 
         # For testing locally
         if "localhost" not in self.url:
@@ -200,12 +233,6 @@ if __name__ == "__main__":
             while True:
                 loc = self.get_data()
                 await self.socket.send_data(loc)
-                if self.socket.stop_areas and self.socket.game_areas:
-                    print("STOP AREA :")
-                    inside_area_effect(self.socket.stop_areas[0], loc) 
-                    print("GAME AREA :")
-                    inside_area_effect(self.socket.game_areas[0], loc)
-
                 await asyncio.sleep(polling_rate)
 
     async def main():
