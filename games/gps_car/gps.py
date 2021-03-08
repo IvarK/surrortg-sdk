@@ -30,8 +30,8 @@ class GPSData:
     This is just for position
     """
 
-    lat: float
     lon: float
+    lat: float
     alt: float
 
 
@@ -115,8 +115,8 @@ class GPSSocket:
         x = {
             "robot_id": self.robot_id,
             "alt": data.alt,
-            "lat": data.lat,
             "long": data.lon,
+            "lat": data.lat,
         }
         self.latest_loc = x
         print("sending: ", x)
