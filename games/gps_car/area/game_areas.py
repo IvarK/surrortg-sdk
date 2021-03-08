@@ -1,10 +1,11 @@
-
 """"
-Methods in these classes should have access to the motor object in order to change the speed of the robot.
+Methods in these classes should have access to the motor object in order to
+change the speed of the robot.
 Individual instances of this class need a 'label' attribute.
 """
 
-class GameArea():
+
+class GameArea:
 
     """
     Attributes:
@@ -16,10 +17,10 @@ class GameArea():
     """
 
     def __init__(self, data):
-        self.area_id = data['uuid']
-        self.label = data['label']
-        self.area = data['area']
-        self.helper(data['props'])
+        self.area_id = data["uuid"]
+        self.label = data["label"]
+        self.area = data["area"]
+        self.helper(data["props"])
         print("Game Area attributes: ", self.slowing_factor, self.reversed)
 
     def __eq__(self, other):
@@ -27,13 +28,14 @@ class GameArea():
 
     def helper(self, properties):
         """look over the properties and add them"""
-        self.reversed = properties.get('reversed', False)
-        self.slowing_factor = properties.get('slowing_factor', 0)
+        self.reversed = properties.get("reversed", False)
+        self.slowing_factor = properties.get("slowing_factor", 0)
 
     def player_in_area(self, socket):
-        
+
         """
-        Method to decrease or increase the robot speed, give points to the player, etc.
+        Method to decrease or increase the robot speed,
+        give points to the player, etc.
         Will be called every cycle.
         """
         pass
@@ -48,4 +50,3 @@ class StopArea(GameArea):
         -coordinates
         -reversed (boolean)
     """
-

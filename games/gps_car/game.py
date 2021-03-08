@@ -6,15 +6,13 @@ from surrortg.inputs import LinearActuator  # and our preferred input(s)
 import pigpio
 import logging
 import asyncio
-import shapely
-import serial
 
 MOTOR_PIN = 16
 SERVO_PIN = 12
 
 
 class PwmActuator(LinearActuator):
-    """ PwmActuator acts as controller for ESC and
+    """PwmActuator acts as controller for ESC and
     steering servo that take standard pwm servo input
 
     It receives values -1 ... 1 and maps that to matching
@@ -42,7 +40,7 @@ class PwmActuator(LinearActuator):
     :var current_delta: Active value that is used to control
         the actuator. Defaults to half of delta_max, and can be
         modified with increase_delta and reduce_delta methods.
-      """
+    """
 
     def __init__(self, pi, pin, delta_max=300, calibration=0):
         self.middle = 1500 + calibration
@@ -114,7 +112,7 @@ class ShiftGear(LinearActuator):
         self.increment = inc
 
     async def drive_actuator(self, val, seat=0):
-        """ Driving this virtual actuator increases the value
+        """Driving this virtual actuator increases the value
         of the connected actuator if the input is positive value,
         and decreases the value if it is negative. Off position
         (0) does nothing."""
@@ -129,8 +127,10 @@ class MyGPSSensor(GPSSensor):
         self.gps_socket = gps_socket
         self.io = io
         self.motor = motor
-        self.inputs_enabled = True  # call enable/disable inputs only when needed
-        self.gear = 0  # counter for slowing down/speeding back up 
+        self.inputs_enabled = (
+            True  # call enable/disable inputs only when needed
+        )
+        self.gear = 0  # counter for slowing down/speeding back up
 
     async def on_data(self, data):
 
@@ -139,25 +139,26 @@ class MyGPSSensor(GPSSensor):
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
             if effects_robot:
-                print("ROBOT IN SLOWING AREA")  
+                print("ROBOT IN SLOWING AREA")
                 game_area.player_in_area(self.gps_socket)
                 player_affected_by_game_area = True
-                #if area.slowing factor is great enough, slow down.
-                if  self.gear > -game_area.slowing_factor:
+                # if area.slowing factor is great enough, slow down.
+                if self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
-                    self.gear -=1
+                    self.gear -= 1
 
-        """Loop over the Stop areas and disable inputs, if not inside any stop area enable inputs"""
+        """Loop over the Stop areas and disable inputs,
+        if not inside any stop area enable inputs"""
         player_affected_by_stop_area = False
         for stop_area in self.gps_socket.stop_areas:
             effects_robot = inside_area_effect(stop_area, data)
             if effects_robot:
-                print("ROBOT IN FORBIDDEN AREA") 
+                print("ROBOT IN FORBIDDEN AREA")
                 stop_area.player_in_area(self.gps_socket)
             if effects_robot and not player_affected_by_stop_area:
                 player_affected_by_stop_area = True
                 self.io.disable_input(0)  # disables inputs
-                await self.motor.drive_actuator(0, seat=0) # stop the car 
+                await self.motor.drive_actuator(0, seat=0)  # stop the car
                 self.inputs_enabled = False
 
         """Player is not in danger, enable inputs"""
@@ -168,9 +169,7 @@ class MyGPSSensor(GPSSensor):
         """Player is not in any game are, raise speed to normal"""
         if not player_affected_by_game_area and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
-            self.gear +=1
-
-            
+            self.gear += 1
 
     async def pre_run(self):
         await self.gps_socket.connect()
@@ -189,7 +188,6 @@ class MyGPSSensor(GPSSensor):
 
 
 class CarGame(Game):
-
     async def on_init(self):
 
         """First initialize the pigpio class. For this you have to have
@@ -228,9 +226,8 @@ class CarGame(Game):
         # http://localhost:9090'
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
         self.gps_socket = GPSSocket(
-            'http://165.227.146.155:3002',
-            self.io._config["device_id"],
-            0)  # pass all required parameters here
+            "http://165.227.146.155:3002", self.io._config["device_id"], 0
+        )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
         self.task = asyncio.create_task(self.gps_sensor.run(1))
@@ -242,13 +239,11 @@ class CarGame(Game):
         if not fut.cancelled() and fut.exception() is not None:
             import traceback
             import sys
+
             e = fut.exception()
             logging.error(
-                "".join(
-                    traceback.format_exception(
-                        None,
-                        e,
-                        e.__traceback__)))
+                "".join(traceback.format_exception(None, e, e.__traceback__))
+            )
             sys.exit(1)
 
     async def on_exit(self, reason, exception):

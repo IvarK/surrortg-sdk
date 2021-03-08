@@ -1,11 +1,10 @@
-import time
 import serial
 import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
-from .area.game_areas import GameArea, StopArea
-from .area.area_methods import inside_area_effect, distance_to_border
+from area.game_areas import GameArea, StopArea
+from area.area_methods import inside_area_effect, distance_to_border
 
 
 """
@@ -15,8 +14,9 @@ General:
  - use python-socketio's async client for the communication:
  https://python-socketio.readthedocs.io/en/latest/api.html#asyncclient-class
  https://github.com/miguelgrinberg/python-socketio
- - pyserial and pyserial-asyncio could be beneficial if serial communication is required
- (if i2c is better use that) 
+ - pyserial and pyserial-asyncio could be beneficial if
+ serial communication is required
+ (if i2c is better use that)
  https://github.com/pyserial/pyserial-asyncio
  -Shapely 1.7
 """
@@ -47,102 +47,107 @@ class GPSSocket:
         self.game_areas = []
         self.stop_areas = []
 
-    @sio.event(namespace='/robot')
+    @sio.event(namespace="/robot")
     def boundary_data(self, data):
         print("Received data: ", data)
-        if ( area['type'] == 'StopArea'):
+        if data["type"] == "StopArea":
             print("New Stop Area")
-            self.stop_areas.append(StopArea(area))
+            self.stop_areas.append(StopArea(data))
         else:
             print("New Game Area")
-            self.game_areas.append(GameArea(area))
+            self.game_areas.append(GameArea(data))
 
-    @sio.event(namespace='/robot')
+    @sio.event(namespace="/robot")
     def all_boundary_data(self, data):
         print("Received data: ", data)
         for area in data:
-            if ( area['type'] == 'StopArea'):
+            if area["type"] == "StopArea":
                 print("New Stop Area")
                 self.stop_areas.append(StopArea(area))
             else:
                 print("New Game Area")
                 self.game_areas.append(GameArea(area))
-    
-    @sio.event(namespace='/robot')
+
+    @sio.event(namespace="/robot")
     def remove_boundary(self, data):
         for area in self.game_areas:
-            if ( area.area_id == data['id']):
+            if area.area_id == data["id"]:
                 self.game_areas.remove(area)
                 break
         for area in self.stop_areas:
-            if ( area.area_id == data['id']):
+            if area.area_id == data["id"]:
                 self.stop_areas.remove(area)
                 break
-    
-    @sio.event(namespace='/robot')
+
+    @sio.event(namespace="/robot")
     def distance_to_area(self, data):
         area = self.get_area(data)
-        if area :
-            dist = distance_to_border(area, loc)
-            self.sio.emit('distance_to_area', dist, namespace='/robot')
-    
-    @sio.event(namespace='/robot')
+        if area:
+            dist = distance_to_border(area, self.latest_loc)
+            self.sio.emit("distance_to_area", dist, namespace="/robot")
+
+    @sio.event(namespace="/robot")
     def inside_area(self, data):
         area = self.get_area(data)
-        if area :
-            effect = inside_area_effect(area, loc)
-            self.sio.emit('distance_to_area', effect, namespace='/robot')
+        if area:
+            effect = inside_area_effect(area, self.latest_loc)
+            self.sio.emit("distance_to_area", effect, namespace="/robot")
 
     def get_area(self, data):
         for area in self.game_areas:
-            if ( area.area_id == data['id']):
+            if area.area_id == data["id"]:
                 return area
         for area in self.stop_areas:
-            if ( area.area_id == data['id']):
+            if area.area_id == data["id"]:
                 return area
         return False
 
     def get_query_url(self, url):
         data = {
-                "role" : 'location',
-                "gameId" : self.game_id,
-                "robotId":  self.robot_id
-                }
+            "role": "location",
+            "gameId": self.game_id,
+            "robotId": self.robot_id,
+        }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        self.url += (
-            f"?token={encoded_jwt}"
-        )
+        self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
         x = {
-                "robot_id":  self.robot_id,
-                "alt": data.alt, 
-                "lat":   data.lat,
-                "long": data.lon
-            }
+            "robot_id": self.robot_id,
+            "alt": data.alt,
+            "lat": data.lat,
+            "long": data.lon,
+        }
+        self.latest_loc = x
         print("sending: ", x)
-        await self.sio.emit('location_data', x, namespace='/robot')
+        await self.sio.emit("location_data", x, namespace="/robot")
 
     async def connect(self):
         # Link the handler to the GPSSocket class, allows the use of 'self'
-        self.sio.on("boundary_data", self.boundary_data, namespace='/robot')
-        self.sio.on("all_boundary_data", self.all_boundary_data, namespace='/robot')
-        self.sio.on("remove_boundary", self.remove_boundary, namespace='/robot')
-        self.sio.on("distance_to_area", self.distance_to_area, namespace='/robot')
-        self.sio.on("inside_area", self.inside_area, namespace='/robot')
+        self.sio.on("boundary_data", self.boundary_data, namespace="/robot")
+        self.sio.on(
+            "all_boundary_data", self.all_boundary_data, namespace="/robot"
+        )
+        self.sio.on(
+            "remove_boundary", self.remove_boundary, namespace="/robot"
+        )
+        self.sio.on(
+            "distance_to_area", self.distance_to_area, namespace="/robot"
+        )
+        self.sio.on("inside_area", self.inside_area, namespace="/robot")
 
         # For testing locally
         if "localhost" not in self.url:
             self.get_query_url(self.url)
         print(self.url)
-        await self.sio.connect(self.url, namespaces=['/robot'])
+        await self.sio.connect(self.url, namespaces=["/robot"])
 
     async def disconnect(self):
         await self.sio.disconnect()
 
 
 class GPSSensor:
-    """Do not implement __init__, as this is more convinient for the users"""
+    """Do not implement __init__, as this is more convenient for the users"""
 
     testing = False
 
@@ -166,8 +171,8 @@ class GPSSensor:
     def get_data(self):
         """Returns a GPSData object
 
-        After connect, this method should be called according to the polling rate
-        (can be async def if needed)
+        After connect, this method should be called
+        according to the polling rate (can be async def if needed)
         """
         if self.testing:
             return GPSData(5, 15, -10000)
@@ -176,7 +181,8 @@ class GPSSensor:
             if "$GPGGA" in gpsData:
                 try:
 
-                    """Parse the data from the sensor and convert the elements to a correct format"""
+                    """Parse the data from the sensor and convert the elements
+                    to a correct format"""
                     gpsList = gpsData.split(",")
 
                     latitude = gpsList[2]
@@ -198,7 +204,7 @@ class GPSSensor:
                     alt = gpsList[9]
 
                     return GPSData(latDec, longDec, alt)
-                except (ValueError, IndexError) as e:
+                except (ValueError, IndexError):
                     return GPSData(0, 0, -10000)
 
     async def on_data(self, data):
@@ -244,7 +250,7 @@ if __name__ == "__main__":
 
         # Create new task and add it to the event loop
         event_loop = asyncio.get_event_loop()
-        task = event_loop.create_task(gps_sensor.run(1))
+        event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
         await asyncio.sleep(30)
