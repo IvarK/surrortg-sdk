@@ -3,8 +3,8 @@ import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
-from area.game_areas import GameArea, StopArea
-from area.area_methods import inside_area_effect, distance_to_border
+from .area.game_areas import GameArea, StopArea
+from .area.area_methods import inside_area_effect, distance_to_border
 
 
 """
