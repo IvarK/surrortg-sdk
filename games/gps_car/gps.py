@@ -14,8 +14,7 @@ General:
  - use python-socketio's async client for the communication:
  https://python-socketio.readthedocs.io/en/latest/api.html#asyncclient-class
  https://github.com/miguelgrinberg/python-socketio
- - pyserial and pyserial-asyncio could be beneficial if
- serial communication is required
+ -pyserial
  (if i2c is better use that)
  https://github.com/pyserial/pyserial-asyncio
  -Shapely 1.7
@@ -170,7 +169,7 @@ class GPSSensor:
 
     def get_data(self):
         """Returns a GPSData object
-
+        
         After connect, this method should be called
         according to the polling rate (can be async def if needed)
         """
@@ -180,7 +179,7 @@ class GPSSensor:
             gpsData = str(self.ser.readline())
             if "$GPGGA" in gpsData:
                 try:
-
+                  
                     """Parse the data from the sensor and convert the elements
                     to a correct format"""
                     gpsList = gpsData.split(",")

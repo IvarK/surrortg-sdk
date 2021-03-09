@@ -171,6 +171,7 @@ class MyGPSSensor(GPSSensor):
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
             self.gear += 1
 
+
     async def pre_run(self):
         await self.gps_socket.connect()
         await self.connect()
