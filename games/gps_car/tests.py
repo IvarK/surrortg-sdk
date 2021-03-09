@@ -1,6 +1,7 @@
 import unittest
-from gps import GPSArea
-
+from area.game_areas import GameArea
+from area.area_methods import inside_area_effect, distance_to_border
+from gps import GPSData
 
 """Simple unittests using Töölönlahti as area"""
 test_area = [
@@ -27,27 +28,36 @@ test_area = [
     [24.9310255, 60.1786389],
 ]
 
-test_location_true = [24.9344587, 60.1799407]
-test_location_true2 = [24.9343729, 60.1841233]
-test_location_false = [24.9311543, 60.1794712]
-area = GPSArea(test_area)
+testArea = {
+    "uuid": "1",
+    "label": "unit_test",
+    "type": "GameArea",
+    "area": test_area,
+}
 
-paris = [2.3522, 48.8566]
-brisbane = [153.021072, -27.470125]
+test_location_true = GPSData(24.9344587, 60.1799407, 0)
+test_location_true2 = GPSData(24.9343729, 60.1841233, 0)
+test_location_false = GPSData(24.9311543, 60.1794712, 0)
+
+area = GameArea(testArea)
+
+paris = GPSData(2.3522, 48.8566, 0)
+brisbane = GPSData(153.021072, -27.470125, 0)
 
 
 class TestGPSArea(unittest.TestCase):
     def test_in_valid_area(self):
-        self.assertEquals(area.in_valid_area(test_location_true), True)
-        self.assertEquals(area.in_valid_area(test_location_true2), True)
-        self.assertEquals(area.in_valid_area(test_location_false), False)
+        self.assertEquals(inside_area_effect(area, test_location_true), True)
+        self.assertEquals(inside_area_effect(area, test_location_true2), True)
+        self.assertEquals(inside_area_effect(area, test_location_false), False)
 
     def test_distance_to_border(self):
         self.assertAlmostEqual(
-            area.distance_to_border(paris), 1909000, delta=5000
+            distance_to_border(area, paris), 1909000, delta=5000
         )
         self.assertAlmostEqual(
-            area.distance_to_border(brisbane), 14705000, delta=5000
+            distance_to_border(area, brisbane), 14705000, delta=5000
+
         )
 
 
