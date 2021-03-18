@@ -12,8 +12,7 @@ class GameArea:
         -id
         -label
         -coordinates
-        -reversed (boolean)
-        -slowing factor
+        -Props
     """
 
     def __init__(self, data):
@@ -30,18 +29,27 @@ class GameArea:
         """look over the properties and add them"""
         self.reversed = properties.get("reversed", False)
         self.slowing_factor = properties.get("slowing_factor", 0)
+        self.disables_inputs = properties.get("disables_inputs", False)
 
-    def player_in_area(self, socket):
-
+    async def player_in_area(self, custom_gps):
         """
         Method to decrease or increase the robot speed,
         give points to the player, etc.
-        Will be called every cycle.
+        Can be called every cycle.
         """
-        pass
+        """
+        if custom_gps.gear > -self.slowing_factor:
+            await ShiftGear(custom_gps.motor).drive_actuator(-1, seat=0)
+            custom_gps.gear -= 1
+
+        if self.disables_inputs and custom_gps.inputs_enabled:
+            custom_gps.io.disable_input(0)  # disables inputs
+            await custom_gps.motor.drive_actuator(0, seat=0)  # stop the car
+            custom_gps.inputs_enabled = False
+        """
 
 
-class StopArea(GameArea):
+class CustomArea(GameArea):
 
     """
     Attributes:

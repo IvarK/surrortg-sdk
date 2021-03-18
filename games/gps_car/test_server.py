@@ -7,6 +7,7 @@ from aiohttp import web
 sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
+NAMESPACE = "/robot"
 
 secret = "asd"
 
@@ -33,21 +34,21 @@ dataJSONTWO = {
 all_data = [dataJSON, dataJSONTWO]
 
 
-@sio.event(namespace="/robot")
+@sio.event(namespace=NAMESPACE)
 def connect(sid, environ):
     print("connect ", sid)
     asyncio.run_coroutine_threadsafe(
-        sio.emit("all_boundary_data", all_data, namespace="/robot"),
+        sio.emit("all_boundary_data", all_data, namespace=NAMESPACE),
         asyncio.get_event_loop(),
     )
 
 
-@sio.event(namespace="/robot")
+@sio.event(namespace=NAMESPACE)
 async def location_data(sid, data):
     print(f"received data :{data}")
 
 
-@sio.event(namespace="/robot")
+@sio.event(namespace=NAMESPACE)
 def disconnect(sid):
     print("disconnect ", sid)
 
