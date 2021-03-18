@@ -103,7 +103,6 @@ class GPSSocket:
             "long": data.lon,
             "lat": data.lat,
         }
-        self.latest_loc = x
         print("sending: ", x)
         await self.sio.emit("location_data", x, namespace="/robot")
 
@@ -163,12 +162,12 @@ class GPSSensor:
         """
         if self.testing:
             return GPSData(5, 15, -10000)
-        # Change for loop
-        # while True:
-        for x in range(0, 10):
+
+        while True:
+            # TEST what happens when you remove gps module during game.
             gpsData = str(self.ser.readline())
             print(gpsData)
-            if "$GPGGA" in gpsData:
+            if gpsData and "$GPGGA" in gpsData:
                 try:
 
                     """Parse the data from the sensor and convert the elements
@@ -225,7 +224,6 @@ if __name__ == "__main__":
             self.socket = socket
 
         async def pre_run(self):
-            await self.connect()
             self.testing = True
             await self.socket.connect()
 
