@@ -134,11 +134,18 @@ class MyGPSSensor(GPSSensor):
 
     async def on_data(self, data):
 
+        print("ON_DATA METHOD")
         """Loop over the Game areas"""
         player_speed_modified = False
         player_inputs_disabled = False
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
+            print(
+                "GAME AREA - ",
+                game_area.label,
+                ". AFFECTS ROBOT - ",
+                effects_robot,
+            )
             if effects_robot:
                 print("ROBOT AFFECTED BY " + game_area.label)
                 game_area.player_in_area(self)
@@ -177,7 +184,7 @@ class MyGPSSensor(GPSSensor):
         await self.pre_run()
         while True:
             loc = self.get_data()
-            if loc.lat == 1000 and loc.lat == 1000 and self.inputs_enabled:
+            if loc.lat == 1000 and loc.lon == 1000 and self.inputs_enabled:
                 self.io.disable_input(0)  # disables inputs
                 await self.motor.drive_actuator(0, seat=0)  # stop the car
                 self.inputs_enabled = False
