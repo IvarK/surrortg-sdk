@@ -140,8 +140,10 @@ class MyGPSSensor(GPSSensor):
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
             if effects_robot:
+                print("ROBOT AFFECTED BY " + game_area.label)
                 game_area.player_in_area(self)
                 if self.gear > -game_area.slowing_factor:
+                    print("ROBOT SLOW DOWN")
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     await self.motor.drive_actuator(0.5, seat=0)
                     self.gear -= 1
@@ -159,6 +161,7 @@ class MyGPSSensor(GPSSensor):
 
         """Player speed is not modified, raise speed to normal"""
         if not player_speed_modified and self.gear < 0:
+            print("ROBOT NOT AFFECTED BY AREA, RETURNING SPEED")
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
             await self.motor.drive_actuator(1, seat=0)
             self.gear += 1

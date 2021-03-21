@@ -56,6 +56,7 @@ class GPSSocket:
         print("Received data: ", data)
         for area in data:
             self.game_areas.append(GameArea(area))
+        print("NUMBER OF AREAS: " + len(self.game_areas))
 
     # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
@@ -103,7 +104,7 @@ class GPSSocket:
             "long": data.lon,
             "lat": data.lat,
         }
-        print("sending: ", x)
+        # print("sending: ", x)
         await self.sio.emit("location_data", x, namespace="/robot")
 
     async def connect(self):
