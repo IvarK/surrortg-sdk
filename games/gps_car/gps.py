@@ -166,8 +166,10 @@ class GPSSensor:
         while True:
             # TEST what happens when you remove gps module during game.
             gpsData = str(self.ser.readline())
-            print(gpsData)
-            if gpsData and "$GPGGA" in gpsData:
+            if len(gpsData) < 5:
+                print("GPS Problem")
+                raise RuntimeError("GPS Problem")
+            if "$GPGGA" in gpsData:
                 try:
 
                     """Parse the data from the sensor and convert the elements
@@ -201,7 +203,6 @@ class GPSSensor:
                         return self.latest_loc
                     else:
                         return GPSData(1000, 1000, 1000)
-        raise RuntimeError("GPS Problem")
 
     async def on_data(self, data):
         """Users should override this method to keep up with changes

@@ -143,6 +143,7 @@ class MyGPSSensor(GPSSensor):
                 game_area.player_in_area(self)
                 if self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
+                    await self.motor.drive_actuator(0.5, seat=0)
                     self.gear -= 1
                     player_speed_modified = True
                 if game_area.disables_inputs and self.inputs_enabled:
@@ -159,6 +160,7 @@ class MyGPSSensor(GPSSensor):
         """Player speed is not modified, raise speed to normal"""
         if not player_speed_modified and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
+            await self.motor.drive_actuator(1, seat=0)
             self.gear += 1
 
     async def pre_run(self):
