@@ -138,7 +138,7 @@ class MyGPSSensor(GPSSensor):
         """Loop over the Game areas"""
         player_speed_modified = False
         player_inputs_disabled = False
-        print("ROBOT LOCATION: ", data.lon, data.lat)
+        print("ROBOT LOCATION: ", data.lat, data.lon)
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
             print(
