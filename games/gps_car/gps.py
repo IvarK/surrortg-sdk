@@ -56,7 +56,6 @@ class GPSSocket:
         print("Received data: ", data)
         for area in data:
             self.game_areas.append(GameArea(area))
-        print("NUMBER OF AREAS: ", len(self.game_areas))
 
     # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
