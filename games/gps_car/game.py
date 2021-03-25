@@ -134,41 +134,33 @@ class MyGPSSensor(GPSSensor):
 
     async def on_data(self, data):
 
-        """Loop over the Game areas and change speed"""
-        player_affected_by_game_area = False
+        """Loop over the Game areas"""
+        player_speed_modified = False
+        player_inputs_disabled = False
+        print("ROBOT LOCATION: ", data.lat, data.lon)
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
             if effects_robot:
-                print("ROBOT IN SLOWING AREA")
-                game_area.player_in_area(self.gps_socket)
-                player_affected_by_game_area = True
-                # if area.slowing factor is great enough, slow down.
+                game_area.player_in_area(self)
                 if self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     self.gear -= 1
+                    player_speed_modified = True
+                if game_area.disables_inputs and self.inputs_enabled:
+                    self.io.disable_input(0)  # disables inputs
+                    await self.motor.drive_actuator(0, seat=0)  # stop the car
+                    self.inputs_enabled = False
+                    player_inputs_disabled = True
 
-        """Loop over the Stop areas and disable inputs,
-        if not inside any stop area enable inputs"""
-        player_affected_by_stop_area = False
-        for stop_area in self.gps_socket.stop_areas:
-            effects_robot = inside_area_effect(stop_area, data)
-            if effects_robot:
-                print("ROBOT IN FORBIDDEN AREA")
-                stop_area.player_in_area(self.gps_socket)
-            if effects_robot and not player_affected_by_stop_area:
-                player_affected_by_stop_area = True
-                self.io.disable_input(0)  # disables inputs
-                await self.motor.drive_actuator(0, seat=0)  # stop the car
-                self.inputs_enabled = False
-
-        """Player is not in danger, enable inputs"""
-        if not self.inputs_enabled and not player_affected_by_stop_area:
+        """Player is not effected by input disabling area, enable inputs"""
+        if not self.inputs_enabled and not player_inputs_disabled:
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
 
-        """Player is not in any game are, raise speed to normal"""
-        if not player_affected_by_game_area and self.gear < 0:
+        """Player speed is not modified, raise speed to normal"""
+        if not player_speed_modified and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
+            # await self.motor.drive_actuator(1, seat=0)
             self.gear += 1
 
 
@@ -183,8 +175,15 @@ class MyGPSSensor(GPSSensor):
         await self.pre_run()
         while True:
             loc = self.get_data()
-            await self.gps_socket.send_data(loc)
-            await self.on_data(loc)
+            if loc.lat == 1000 and loc.lon == 1000 and self.inputs_enabled:
+                self.io.disable_input(0)  # disables inputs
+                await self.motor.drive_actuator(0, seat=0)  # stop the car
+                self.inputs_enabled = False
+                # Maybe emit message that robot has lost gps fix
+            else:
+                await self.gps_socket.send_data(loc)
+                await self.on_data(loc)
+
             await asyncio.sleep(polling_rate)
 
 

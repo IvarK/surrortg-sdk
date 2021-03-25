@@ -5,7 +5,7 @@ from math import radians, cos, sin, asin, sqrt
 
 def inside_area_effect(game_area, location):
     boundary_area = Polygon(game_area.area)
-    loc = Point([location.lon, location.lat])
+    loc = Point([location.lat, location.lon])
     """Returns True if inside the valid area, False if not"""
     return boundary_area.contains(loc) is not game_area.reversed
 

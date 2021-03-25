@@ -3,7 +3,7 @@ import socketio
 import asyncio
 import jwt
 from dataclasses import dataclass
-from .area.game_areas import GameArea, StopArea
+from .area.game_areas import GameArea
 from .area.area_methods import inside_area_effect, distance_to_border
 
 
@@ -44,40 +44,27 @@ class GPSSocket:
         self.robot_id = robot_id
         self.game_id = game_id
         self.game_areas = []
-        self.stop_areas = []
 
     @sio.event(namespace="/robot")
     def boundary_data(self, data):
         print("Received data: ", data)
-        if data["type"] == "StopArea":
-            print("New Stop Area")
-            self.stop_areas.append(StopArea(data))
-        else:
-            print("New Game Area")
-            self.game_areas.append(GameArea(data))
+        self.game_areas.append(GameArea(data))
 
     @sio.event(namespace="/robot")
     def all_boundary_data(self, data):
         print("Received data: ", data)
         for area in data:
-            if area["type"] == "StopArea":
-                print("New Stop Area")
-                self.stop_areas.append(StopArea(area))
-            else:
-                print("New Game Area")
-                self.game_areas.append(GameArea(area))
+            self.game_areas.append(GameArea(area))
 
+    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
     def remove_boundary(self, data):
         for area in self.game_areas:
             if area.area_id == data["id"]:
                 self.game_areas.remove(area)
                 break
-        for area in self.stop_areas:
-            if area.area_id == data["id"]:
-                self.stop_areas.remove(area)
-                break
 
+    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
     def distance_to_area(self, data):
         area = self.get_area(data)
@@ -85,6 +72,7 @@ class GPSSocket:
             dist = distance_to_border(area, self.latest_loc)
             self.sio.emit("distance_to_area", dist, namespace="/robot")
 
+    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
     def inside_area(self, data):
         area = self.get_area(data)
@@ -94,9 +82,6 @@ class GPSSocket:
 
     def get_area(self, data):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
-                return area
-        for area in self.stop_areas:
             if area.area_id == data["id"]:
                 return area
         return False
@@ -117,8 +102,7 @@ class GPSSocket:
             "long": data.lon,
             "lat": data.lat,
         }
-        self.latest_loc = x
-        print("sending: ", x)
+        # print("sending: ", x)
         await self.sio.emit("location_data", x, namespace="/robot")
 
     async def connect(self):
@@ -149,6 +133,8 @@ class GPSSensor:
     """Do not implement __init__, as this is more convenient for the users"""
 
     testing = False
+    num_of_errors = 0
+    latest_loc = GPSData(1000, 1000, 1000)
 
     async def connect(self, pins="SOME_DEFAULT_PINS"):
         """Connect and start polling data from the sensor to on_location method
@@ -175,8 +161,13 @@ class GPSSensor:
         """
         if self.testing:
             return GPSData(5, 15, -10000)
+
         while True:
+            # TEST what happens when you remove gps module during game.
             gpsData = str(self.ser.readline())
+            if len(gpsData) < 5:
+                print("GPS Problem")
+                raise RuntimeError("GPS Problem")
             if "$GPGGA" in gpsData:
                 try:
                   
@@ -201,10 +192,16 @@ class GPSSensor:
                         longDec = -longDec
 
                     alt = gpsList[9]
+                    self.latest_loc = GPSData(latDec, longDec, alt)
+                    self.num_of_errors = 0
 
                     return GPSData(latDec, longDec, alt)
                 except (ValueError, IndexError):
-                    return GPSData(0, 0, -10000)
+                    self.num_of_errors += 1
+                    if self.num_of_errors < 5 and self.latest_loc:
+                        return self.latest_loc
+                    else:
+                        return GPSData(1000, 1000, 1000)
 
     async def on_data(self, data):
         """Users should override this method to keep up with changes
