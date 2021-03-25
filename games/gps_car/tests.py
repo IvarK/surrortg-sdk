@@ -105,6 +105,7 @@ class TestGPSArea(unittest.TestCase):
         )
         self.assertAlmostEqual(
             distance_to_border(area, brisbane), 14705000, delta=5000
+
         )
 
     def test_area_one(self):
