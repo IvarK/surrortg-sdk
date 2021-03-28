@@ -47,7 +47,12 @@ class GPSSocket:
 
     @sio.event(namespace="/robot")
     def boundary_data(self, data):
+        # if area id exists, update
         print("Received data: ", data)
+        for area in self.game_areas:
+            if area.area_id == data["uuid"]:
+                print("Override old area.")
+                self.game_areas.remove(area)
         self.game_areas.append(GameArea(data))
 
     @sio.event(namespace="/robot")
@@ -56,35 +61,31 @@ class GPSSocket:
         for area in data:
             self.game_areas.append(GameArea(area))
 
-    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
     def remove_boundary(self, data):
         for area in self.game_areas:
             if area.area_id == data["id"]:
+                print("Remove area: ", area.area_id)
                 self.game_areas.remove(area)
                 break
 
-    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
     def distance_to_area(self, data):
-        area = self.get_area(data)
-        if area:
-            dist = distance_to_border(area, self.latest_loc)
-            self.sio.emit("distance_to_area", dist, namespace="/robot")
-
-    # NOT IMPLEMENTED
-    @sio.event(namespace="/robot")
-    def inside_area(self, data):
-        area = self.get_area(data)
-        if area:
-            effect = inside_area_effect(area, self.latest_loc)
-            self.sio.emit("distance_to_area", effect, namespace="/robot")
-
-    def get_area(self, data):
         for area in self.game_areas:
             if area.area_id == data["id"]:
-                return area
-        return False
+                print("Distance to area!")
+                dist = distance_to_border(area, self.latest_loc)
+                self.sio.emit("distance_to_area", dist, namespace="/robot")
+                break
+
+    @sio.event(namespace="/robot")
+    def inside_area(self, data):
+        for area in self.game_areas:
+            if area.area_id == data["id"]:
+                print("Inside an area!")
+                effect = inside_area_effect(area, self.latest_loc)
+                self.sio.emit("distance_to_area", effect, namespace="/robot")
+                break
 
     def get_query_url(self, url):
         data = {
@@ -155,7 +156,7 @@ class GPSSensor:
 
     def get_data(self):
         """Returns a GPSData object
-        
+
         After connect, this method should be called
         according to the polling rate (can be async def if needed)
         """
@@ -170,7 +171,7 @@ class GPSSensor:
                 raise RuntimeError("GPS Problem")
             if "$GPGGA" in gpsData:
                 try:
-                  
+
                     """Parse the data from the sensor and convert the elements
                     to a correct format"""
                     gpsList = gpsData.split(",")
