@@ -146,11 +146,21 @@ class MyGPSSensor(GPSSensor):
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     self.gear -= 1
                     player_speed_modified = True
+
+                    # If player enters area for the first time
+                    if not game_area.player_inside:
+                        print("Player affected for the first time")
+                        await self.motor.drive_actuator(0, seat=0)
+                        game_area.player_inside = True
+
                 if game_area.disables_inputs and self.inputs_enabled:
                     self.io.disable_input(0)  # disables inputs
                     await self.motor.drive_actuator(0, seat=0)  # stop the car
                     self.inputs_enabled = False
                     player_inputs_disabled = True
+            else:
+                # Player is outside the area effect, reset boolean to False
+                game_area.player_inside = False
 
         """Player is not effected by input disabling area, enable inputs"""
         if not self.inputs_enabled and not player_inputs_disabled:
@@ -160,7 +170,7 @@ class MyGPSSensor(GPSSensor):
         """Player speed is not modified, raise speed to normal"""
         if not player_speed_modified and self.gear < 0:
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
-            # await self.motor.drive_actuator(1, seat=0)
+            await self.motor.drive_actuator(1, seat=0)
             self.gear += 1
 
     async def pre_run(self):

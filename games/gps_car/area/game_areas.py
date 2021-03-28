@@ -19,6 +19,7 @@ class GameArea:
         self.area_id = data["uuid"]
         self.label = data["label"]
         self.area = data["area"]
+        self.player_inside = False
         self.helper(data.get("props", {}))
         print("Game Area attributes: ", self.slowing_factor, self.reversed)
 
