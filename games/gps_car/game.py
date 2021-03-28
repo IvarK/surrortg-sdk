@@ -142,15 +142,17 @@ class MyGPSSensor(GPSSensor):
             effects_robot = inside_area_effect(game_area, data)
             if effects_robot:
                 await game_area.player_in_area(self)
+                if game_area.slowing_factor > 0:
+                    player_speed_modified = True
                 if self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     self.gear -= 1
-                    player_speed_modified = True
+                    # player_speed_modified = True
                     print("Player speed decreasing!")
                     # If player enters area for the first time
                     if not game_area.player_inside:
                         print("Player affected for the first time")
-                        await self.motor.drive_actuator(0, seat=0)
+                        await self.motor.drive_actuator(0.5, seat=0)
                         game_area.player_inside = True
 
                 if game_area.disables_inputs and self.inputs_enabled:
