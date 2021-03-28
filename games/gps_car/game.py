@@ -152,7 +152,7 @@ class MyGPSSensor(GPSSensor):
                     # If player enters area for the first time
                     if not game_area.player_inside:
                         print("Player affected for the first time")
-                        await self.motor.drive_actuator(0.5, seat=0)
+                        await self.motor.drive_actuator(0.75, seat=0)
                         game_area.player_inside = True
 
                 if game_area.disables_inputs and self.inputs_enabled:
