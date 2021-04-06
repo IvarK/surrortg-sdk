@@ -48,10 +48,10 @@ class GPSSocket:
     @sio.event(namespace="/robot")
     def boundary_data(self, data):
         # if area id exists, update
-        print("Received data: ", data)
+        print("Received single data: ", data)
         for area in self.game_areas:
             if area.area_id == data["uuid"]:
-                print("Override old area.")
+                print("Override old area: ", area.area_id)
                 self.game_areas.remove(area)
         self.game_areas.append(GameArea(data))
 
@@ -62,29 +62,33 @@ class GPSSocket:
             self.game_areas.append(GameArea(area))
 
     @sio.event(namespace="/robot")
-    def remove_boundary(self, data):
+    def remove_boundary(self, id):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
-                print("Remove area: ", area.area_id)
+            if area.area_id == id:
+                print(
+                    "Remove area: ", area.area_id, " and label: ", area.label
+                )
                 self.game_areas.remove(area)
                 break
 
+    # Not used
     @sio.event(namespace="/robot")
-    def distance_to_area(self, data):
+    def distance_to_area(self, id):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
+            if area.area_id == id:
                 print("Distance to area!")
                 dist = distance_to_border(area, self.latest_loc)
                 self.sio.emit("distance_to_area", dist, namespace="/robot")
                 break
 
+    # Not used
     @sio.event(namespace="/robot")
-    def inside_area(self, data):
+    def inside_area(self, id):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
+            if area.area_id == id:
                 print("Inside an area!")
                 effect = inside_area_effect(area, self.latest_loc)
-                self.sio.emit("distance_to_area", effect, namespace="/robot")
+                self.sio.emit("inside_area", effect, namespace="/robot")
                 break
 
     def get_query_url(self, url):
@@ -242,7 +246,8 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://localhost:9010", 123456, "0")
+
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
@@ -250,7 +255,7 @@ if __name__ == "__main__":
         event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(30)
+        await asyncio.sleep(120)
         await gps_sensor.post_run()
         print("main loop ended")
 

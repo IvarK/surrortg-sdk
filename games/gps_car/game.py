@@ -47,6 +47,7 @@ class PwmActuator(LinearActuator):
         self.delta_max = delta_max
         self.current_delta = delta_max / 2
         # Store and initialize pigpio for the control pin
+        self.latest_val = 0
         self.pi = pi
         self.pin = pin
         self.pi.set_mode(self.pin, pigpio.OUTPUT)
@@ -65,6 +66,7 @@ class PwmActuator(LinearActuator):
         :param val: float value from ranging -1 to 1. If keyboard
             input is used it will be -1, 0 or 1.
         """
+        self.latest_val = val
         new_val = self.middle + (val * self.current_delta)
         self.pi.set_servo_pulsewidth(self.pin, new_val)
 
@@ -152,7 +154,9 @@ class MyGPSSensor(GPSSensor):
                     # If player enters area for the first time
                     if not game_area.player_inside:
                         print("Player affected for the first time")
-                        await self.motor.drive_actuator(0.75, seat=0)
+                        await self.motor.drive_actuator(
+                            self.motor.latest_val * 0.75, seat=0
+                        )
                         game_area.player_inside = True
 
                 if game_area.disables_inputs and self.inputs_enabled:
@@ -173,7 +177,7 @@ class MyGPSSensor(GPSSensor):
         if not player_speed_modified and self.gear < 0:
             print("Player speed increasing!")
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
-            await self.motor.drive_actuator(1, seat=0)
+            await self.motor.drive_actuator(self.motor.latest_val, seat=0)
             self.gear += 1
 
     async def pre_run(self):

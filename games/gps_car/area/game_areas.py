@@ -21,6 +21,7 @@ class GameArea:
         self.area = data["area"]
         self.player_inside = False
         self.helper(data.get("props", {}))
+        print("Game Area id: ", self.area_id)
         print("Game Area attributes: ", self.slowing_factor, self.reversed)
 
     def __eq__(self, other):
