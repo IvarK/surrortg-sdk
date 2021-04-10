@@ -153,7 +153,6 @@ class MyGPSSensor(GPSSensor):
                     print("Player speed decreasing!")
                     # If player enters area for the first time
                     if not game_area.player_inside:
-                        print("Player affected for the first time")
                         await self.motor.drive_actuator(
                             self.motor.latest_val * 0.75, seat=0
                         )
@@ -163,10 +162,6 @@ class MyGPSSensor(GPSSensor):
                     player_inputs_disabled = True
 
                 if game_area.disables_inputs and self.inputs_enabled:
-                    print(
-                        """player affected by input disabling area
-                        disabling inputs"""
-                    )
                     self.io.disable_input(0)  # disables inputs
                     await self.motor.drive_actuator(0, seat=0)  # stop the car
                     self.inputs_enabled = False
@@ -181,13 +176,6 @@ class MyGPSSensor(GPSSensor):
             and not player_inputs_disabled
             and not self.gps_fix_lost
         ):
-            print("self.inputs_enabled: ", self.inputs_enabled)
-            print("player_inputs_disabled: ", player_inputs_disabled)
-            print("self.gps_fix_lost: ", self.gps_fix_lost)
-            print(
-                """Player is not affected by input disabling area
-                enabling inputs"""
-            )
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
 
