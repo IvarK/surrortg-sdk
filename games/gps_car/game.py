@@ -159,6 +159,9 @@ class MyGPSSensor(GPSSensor):
                         )
                         game_area.player_inside = True
 
+                if game_area.disables_inputs:
+                    player_inputs_disabled = True
+
                 if game_area.disables_inputs and self.inputs_enabled:
                     print(
                         """player affected by input disabling area
@@ -167,7 +170,7 @@ class MyGPSSensor(GPSSensor):
                     self.io.disable_input(0)  # disables inputs
                     await self.motor.drive_actuator(0, seat=0)  # stop the car
                     self.inputs_enabled = False
-                    player_inputs_disabled = True
+
             else:
                 # Player is outside the area effect, reset boolean to False
                 game_area.player_inside = False
