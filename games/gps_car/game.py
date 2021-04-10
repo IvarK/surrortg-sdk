@@ -178,6 +178,9 @@ class MyGPSSensor(GPSSensor):
             and not player_inputs_disabled
             and not self.gps_fix_lost
         ):
+            print("self.inputs_enabled: ", self.inputs_enabled)
+            print("player_inputs_disabled: ", player_inputs_disabled)
+            print("self.gps_fix_lost: ", self.gps_fix_lost)
             print(
                 """Player is not affected by input disabling area
                 enabling inputs"""
