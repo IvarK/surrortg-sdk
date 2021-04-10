@@ -259,7 +259,7 @@ class CarGame(Game):
         # Add a done callback
         self.task.add_done_callback(self.run_done_cb)
 
-    def run_done_cb(self, fut):
+    async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
         if not fut.cancelled() and fut.exception() is not None:
             import traceback
