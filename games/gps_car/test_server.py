@@ -11,20 +11,15 @@ NAMESPACE = "/robot"
 
 secret = "asd"
 
-props1 = {"prop1": "empty", "slowing_factor": "3"}
+props1 = {"prop1": "empty", "reversed": "True"}
 
-props2 = {"prop1": "empty", "disables_inputs": True}
+props2 = {"prop1": "empty", "slowing_factor": "3"}
 
 dataJSON = {
     "uuid": "1",
     "label": "test_area",
     "type": "StopArea",
-    "area": [
-        [60.168811, 24.774154],
-        [60.168569, 24.774197],
-        [60.168445, 24.774725],
-        [60.169048, 24.774696],
-    ],
+    "area": [[0, 0], [0, 10], [10, 10], [10, 0]],
     "props": props1,
 }
 
@@ -32,14 +27,10 @@ dataJSONTWO = {
     "uuid": "2",
     "label": "test_area2",
     "type": "GameArea",
-    "area": [
-        [60.169265, 24.775230],
-        [60.168509, 24.775541],
-        [60.168579, 24.776485],
-        [60.169150, 24.776109],
-    ],
+    "area": [[0, 0], [0, 20], [20, 20], [20, 0]],
     "props": props2,
 }
+
 all_data = [dataJSON, dataJSONTWO]
 
 
