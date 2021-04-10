@@ -47,6 +47,7 @@ class PwmActuator(LinearActuator):
         self.delta_max = delta_max
         self.current_delta = delta_max / 2
         # Store and initialize pigpio for the control pin
+        self.latest_val = 0
         self.pi = pi
         self.pin = pin
         self.pi.set_mode(self.pin, pigpio.OUTPUT)
@@ -65,6 +66,7 @@ class PwmActuator(LinearActuator):
         :param val: float value from ranging -1 to 1. If keyboard
             input is used it will be -1, 0 or 1.
         """
+        self.latest_val = val
         new_val = self.middle + (val * self.current_delta)
         self.pi.set_servo_pulsewidth(self.pin, new_val)
 
@@ -141,28 +143,48 @@ class MyGPSSensor(GPSSensor):
         for game_area in self.gps_socket.game_areas:
             effects_robot = inside_area_effect(game_area, data)
             if effects_robot:
-                game_area.player_in_area(self)
+                await game_area.player_in_area(self)
+                if game_area.slowing_factor > 0:
+                    player_speed_modified = True
                 if self.gear > -game_area.slowing_factor:
                     await ShiftGear(self.motor).drive_actuator(-1, seat=0)
                     self.gear -= 1
-                    player_speed_modified = True
+                    # player_speed_modified = True
+                    print("Player speed decreasing!")
+                    # If player enters area for the first time
+                    if not game_area.player_inside:
+                        await self.motor.drive_actuator(
+                            self.motor.latest_val * 0.75, seat=0
+                        )
+                        game_area.player_inside = True
+
+                if game_area.disables_inputs:
+                    player_inputs_disabled = True
+
                 if game_area.disables_inputs and self.inputs_enabled:
                     self.io.disable_input(0)  # disables inputs
                     await self.motor.drive_actuator(0, seat=0)  # stop the car
                     self.inputs_enabled = False
-                    player_inputs_disabled = True
+
+            else:
+                # Player is outside the area effect, reset boolean to False
+                game_area.player_inside = False
 
         """Player is not effected by input disabling area, enable inputs"""
-        if not self.inputs_enabled and not player_inputs_disabled:
+        if (
+            not self.inputs_enabled
+            and not player_inputs_disabled
+            and not self.gps_fix_lost
+        ):
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
 
         """Player speed is not modified, raise speed to normal"""
         if not player_speed_modified and self.gear < 0:
+            print("Player speed increasing!")
             await ShiftGear(self.motor).drive_actuator(1, seat=0)
-            # await self.motor.drive_actuator(1, seat=0)
+            await self.motor.drive_actuator(self.motor.latest_val, seat=0)
             self.gear += 1
-
 
     async def pre_run(self):
         await self.gps_socket.connect()
@@ -175,7 +197,13 @@ class MyGPSSensor(GPSSensor):
         await self.pre_run()
         while True:
             loc = self.get_data()
-            if loc.lat == 1000 and loc.lon == 1000 and self.inputs_enabled:
+            if loc.lat == 1000 and loc.lon == 1000:
+                self.gps_fix_lost = True
+            else:
+                self.gps_fix_lost = False
+
+            if self.gps_fix_lost and self.inputs_enabled:
+                print("gps fix lost, disabling inputs")
                 self.io.disable_input(0)  # disables inputs
                 await self.motor.drive_actuator(0, seat=0)  # stop the car
                 self.inputs_enabled = False
@@ -234,12 +262,15 @@ class CarGame(Game):
         # Add a done callback
         self.task.add_done_callback(self.run_done_cb)
 
-    def run_done_cb(self, fut):
+    async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
         if not fut.cancelled() and fut.exception() is not None:
             import traceback
             import sys
 
+            # If the game ends stop the motor manually
+            # Otherwise car keeps on driving
+            await self.motor.drive_actuator(0, seat=0)
             e = fut.exception()
             logging.error(
                 "".join(traceback.format_exception(None, e, e.__traceback__))

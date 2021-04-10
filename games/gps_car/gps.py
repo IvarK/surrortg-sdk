@@ -47,7 +47,12 @@ class GPSSocket:
 
     @sio.event(namespace="/robot")
     def boundary_data(self, data):
-        print("Received data: ", data)
+        # if area id exists, update
+        print("Received single data: ", data)
+        for area in self.game_areas:
+            if area.area_id == data["uuid"]:
+                print("Override old area: ", area.area_id)
+                self.game_areas.remove(area)
         self.game_areas.append(GameArea(data))
 
     @sio.event(namespace="/robot")
@@ -56,35 +61,35 @@ class GPSSocket:
         for area in data:
             self.game_areas.append(GameArea(area))
 
-    # NOT IMPLEMENTED
     @sio.event(namespace="/robot")
-    def remove_boundary(self, data):
+    def remove_boundary(self, id):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
+            if area.area_id == id:
+                print(
+                    "Remove area: ", area.area_id, " and label: ", area.label
+                )
                 self.game_areas.remove(area)
                 break
 
-    # NOT IMPLEMENTED
+    # Not used
     @sio.event(namespace="/robot")
-    def distance_to_area(self, data):
-        area = self.get_area(data)
-        if area:
-            dist = distance_to_border(area, self.latest_loc)
-            self.sio.emit("distance_to_area", dist, namespace="/robot")
-
-    # NOT IMPLEMENTED
-    @sio.event(namespace="/robot")
-    def inside_area(self, data):
-        area = self.get_area(data)
-        if area:
-            effect = inside_area_effect(area, self.latest_loc)
-            self.sio.emit("distance_to_area", effect, namespace="/robot")
-
-    def get_area(self, data):
+    def distance_to_area(self, id):
         for area in self.game_areas:
-            if area.area_id == data["id"]:
-                return area
-        return False
+            if area.area_id == id:
+                print("Distance to area!")
+                dist = distance_to_border(area, self.latest_loc)
+                self.sio.emit("distance_to_area", dist, namespace="/robot")
+                break
+
+    # Not used
+    @sio.event(namespace="/robot")
+    def inside_area(self, id):
+        for area in self.game_areas:
+            if area.area_id == id:
+                print("Inside an area!")
+                effect = inside_area_effect(area, self.latest_loc)
+                self.sio.emit("inside_area", effect, namespace="/robot")
+                break
 
     def get_query_url(self, url):
         data = {
@@ -133,6 +138,7 @@ class GPSSensor:
     """Do not implement __init__, as this is more convenient for the users"""
 
     testing = False
+    gps_fix_lost = False
     num_of_errors = 0
     latest_loc = GPSData(1000, 1000, 1000)
 
@@ -155,7 +161,7 @@ class GPSSensor:
 
     def get_data(self):
         """Returns a GPSData object
-        
+
         After connect, this method should be called
         according to the polling rate (can be async def if needed)
         """
@@ -170,7 +176,7 @@ class GPSSensor:
                 raise RuntimeError("GPS Problem")
             if "$GPGGA" in gpsData:
                 try:
-                  
+
                     """Parse the data from the sensor and convert the elements
                     to a correct format"""
                     gpsList = gpsData.split(",")
@@ -241,7 +247,8 @@ if __name__ == "__main__":
         print("running")
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
-        socket = GPSSocket("http://localhost:9010", 123456, "0")
+
+        socket = GPSSocket("http://165.227.146.155:3002", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
@@ -249,7 +256,7 @@ if __name__ == "__main__":
         event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(30)
+        await asyncio.sleep(120)
         await gps_sensor.post_run()
         print("main loop ended")
 
