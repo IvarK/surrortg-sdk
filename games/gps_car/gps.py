@@ -138,6 +138,7 @@ class GPSSensor:
     """Do not implement __init__, as this is more convenient for the users"""
 
     testing = False
+    gps_fix_lost = False
     num_of_errors = 0
     latest_loc = GPSData(1000, 1000, 1000)
 

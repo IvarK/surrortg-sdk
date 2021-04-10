@@ -169,7 +169,11 @@ class MyGPSSensor(GPSSensor):
                 game_area.player_inside = False
 
         """Player is not effected by input disabling area, enable inputs"""
-        if not self.inputs_enabled and not player_inputs_disabled:
+        if (
+            not self.inputs_enabled
+            and not player_inputs_disabled
+            and not self.gps_fix_lost
+        ):
             self.io.enable_input(0)  # enables inputs
             self.inputs_enabled = True
 
@@ -191,7 +195,12 @@ class MyGPSSensor(GPSSensor):
         await self.pre_run()
         while True:
             loc = self.get_data()
-            if loc.lat == 1000 and loc.lon == 1000 and self.inputs_enabled:
+            if loc.lat == 1000 and loc.lon == 1000:
+                self.gps_fix_lost = True
+            else:
+                self.gps_fix_lost = False
+
+            if self.gps_fix_lost and self.inputs_enabled:
                 self.io.disable_input(0)  # disables inputs
                 await self.motor.drive_actuator(0, seat=0)  # stop the car
                 self.inputs_enabled = False
