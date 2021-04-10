@@ -265,6 +265,9 @@ class CarGame(Game):
             import traceback
             import sys
 
+            # If the game ends stop the motor manually
+            # Otherwise car keeps on driving
+            await self.motor.drive_actuator(0, seat=0)
             e = fut.exception()
             logging.error(
                 "".join(traceback.format_exception(None, e, e.__traceback__))
