@@ -187,6 +187,7 @@ class MyGPSSensor(GPSSensor):
             self.gear += 1
 
     async def pre_run(self):
+        # run CarGame's on_config
         await self.gps_socket.connect()
         await self.connect()
 
@@ -261,6 +262,16 @@ class CarGame(Game):
         self.task = asyncio.create_task(self.gps_sensor.run(1))
         # Add a done callback
         self.task.add_done_callback(self.run_done_cb)
+        self.on_config()
+
+    async def on_config(self):
+        """Do things before the game engine starts fetching new players
+
+        For example new inputs can be registered here if they change
+        based on self.configs.
+        """
+        # Gives the JWT (token), not the secret!
+        print("\n THESE ARE THE GAME CONFIGS:\n", self._configs)
 
     async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
