@@ -99,10 +99,11 @@ class GPSSocket:
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        print("Token from GE in GPSSocket: ", await self.config_method())
+        self.token = await self.config_method()
         self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
+        print("Token from GE in GPSSocket: ", self.token)
         x = {
             "robot_id": self.robot_id,
             "alt": data.alt,
