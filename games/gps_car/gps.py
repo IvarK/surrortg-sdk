@@ -92,14 +92,14 @@ class GPSSocket:
                 self.sio.emit("inside_area", effect, namespace="/robot")
                 break
 
-    def get_query_url(self, url):
+    async def get_query_url(self, url):
         data = {
             "role": "location",
             "gameId": self.game_id,
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        print("Token from GE in GPSSocket: ", self.config_method())
+        print("Token from GE in GPSSocket: ", await self.config_method())
         self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
@@ -128,7 +128,7 @@ class GPSSocket:
 
         # For testing locally
         if "localhost" not in self.url:
-            self.get_query_url(self.url)
+            await self.get_query_url(self.url)
         print(self.url)
         await self.sio.connect(self.url, namespaces=["/robot"])
 
