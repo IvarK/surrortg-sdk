@@ -195,6 +195,7 @@ class MyGPSSensor(GPSSensor):
         await self.gps_socket.disconnect()
 
     async def run(self, polling_rate):
+        print("GAME IS RUNNING")
         await self.pre_run()
         while True:
             loc = self.get_data()
@@ -255,18 +256,6 @@ class CarGame(Game):
         # http://localhost:9090'
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
 
-        self.gps_socket = GPSSocket(
-            "http://165.227.146.155:3002",
-            self.io._config["device_id"],
-            0,
-            self.on_config,
-        )  # pass all required parameters here
-        self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
-        # Create new task
-        self.task = asyncio.create_task(self.gps_sensor.run(1))
-        # Add a done callback
-        self.task.add_done_callback(self.run_done_cb)
-
     async def on_config(self):
         """Do things before the game engine starts fetching new players
 
@@ -278,7 +267,17 @@ class CarGame(Game):
             "on_config token print: ",
             self._configs.get("locationServiceToken"),
         )
-        return self._configs.get("locationServiceToken")
+        self.gps_socket = GPSSocket(
+            "http://165.227.146.155:3002",
+            self.io._config["device_id"],
+            0,
+            self._configs.get("locationServiceToken"),
+        )  # pass all required parameters here
+        self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
+        # Create new task
+        self.task = asyncio.create_task(self.gps_sensor.run(1))
+        # Add a done callback
+        self.task.add_done_callback(self.run_done_cb)
 
     async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
