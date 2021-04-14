@@ -254,11 +254,12 @@ class CarGame(Game):
         # create gpsSocket and custom GPSSensor
         # http://localhost:9090'
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
+        print("self.io._config 's: ", self.io._config)
         self.gps_socket = GPSSocket(
             "http://165.227.146.155:3002",
             self.io._config["device_id"],
             0,
-            await self.on_config,
+            self.on_config,
         )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
@@ -274,7 +275,7 @@ class CarGame(Game):
         """
         # Gives the JWT (token), not the secret!
         print(
-            "On config token print: ",
+            "on_config token print: ",
             self._configs.get("locationServiceToken"),
         )
         return self._configs.get("locationServiceToken")
