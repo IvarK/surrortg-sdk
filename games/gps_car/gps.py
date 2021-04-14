@@ -39,10 +39,11 @@ class GPSSocket:
     sio = socketio.AsyncClient()
     secret = "asd"
 
-    def __init__(self, url, robot_id, game_id):
+    def __init__(self, url, robot_id, game_id, token):
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
+        self.token = token
         self.game_areas = []
 
     @sio.event(namespace="/robot")
@@ -98,6 +99,7 @@ class GPSSocket:
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
+        print("Token from GE: ", self.token)
         self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
