@@ -256,7 +256,7 @@ class CarGame(Game):
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
 
         self.gps_socket = GPSSocket(
-            "http://165.227.146.155:3002",
+            "https://165.227.146.155:3002",
             self.io._config["device_id"],
             0,
             self.on_config,
