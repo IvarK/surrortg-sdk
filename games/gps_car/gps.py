@@ -39,11 +39,10 @@ class GPSSocket:
     sio = socketio.AsyncClient()
     secret = "asd"
 
-    def __init__(self, url, robot_id, game_id, config_method):
+    def __init__(self, url, robot_id, game_id):
         self.url = url
         self.robot_id = robot_id
         self.game_id = game_id
-        self.config_method = config_method
         self.game_areas = []
 
     @sio.event(namespace="/robot")
@@ -99,11 +98,12 @@ class GPSSocket:
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        self.token = await self.config_method()
+        print(
+            "In gps.py 'get_query_url' method. self.token value: ", self.token
+        )
         self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
-        print("Token from GE in GPSSocket: ", self.token)
         x = {
             "robot_id": self.robot_id,
             "alt": data.alt,
@@ -132,9 +132,11 @@ class GPSSocket:
             await self.get_query_url(self.url)
         print(self.url)
         await self.sio.connect(self.url, namespaces=["/robot"])
+        print("CONNECTED")
 
     async def disconnect(self):
         await self.sio.disconnect()
+        print("disconnected")
 
 
 class GPSSensor:
@@ -242,6 +244,7 @@ if __name__ == "__main__":
         async def run(self, polling_rate):
             await self.pre_run()
             while True:
+                print("running")
                 loc = self.get_data()
                 await self.socket.send_data(loc)
                 await asyncio.sleep(polling_rate)
@@ -251,7 +254,7 @@ if __name__ == "__main__":
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
 
-        socket = GPSSocket("https://165.227.146.155:3002", 123456, "0")
+        socket = GPSSocket("https://gps.surrogate.tv:3002", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
@@ -259,7 +262,7 @@ if __name__ == "__main__":
         event_loop.create_task(gps_sensor.run(1))
 
         # get GPS updates for 30s according to the set polling rate
-        await asyncio.sleep(120)
+        await asyncio.sleep(10)
         await gps_sensor.post_run()
         print("main loop ended")
 

@@ -256,10 +256,7 @@ class CarGame(Game):
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
 
         self.gps_socket = GPSSocket(
-            "https://165.227.146.155:3002",
-            self.io._config["device_id"],
-            0,
-            self.on_config,
+            "https://gps.surrogate.tv:3002", self.io._config["device_id"], 0,
         )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
@@ -273,12 +270,12 @@ class CarGame(Game):
         For example new inputs can be registered here if they change
         based on self.configs.
         """
+        self.gps_socket.token = self._configs.get("locationServiceToken")
         # Gives the JWT (token), not the secret!
         print(
             "on_config token print: ",
             self._configs.get("locationServiceToken"),
         )
-        return self._configs.get("locationServiceToken")
 
     async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
