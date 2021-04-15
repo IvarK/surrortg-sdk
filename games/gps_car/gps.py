@@ -248,7 +248,7 @@ if __name__ == "__main__":
         # Create SocketIO and GPSSensor
         # "http://localhost:9090"
 
-        socket = GPSSocket("http://165.227.146.155:3002", 123456, "0")
+        socket = GPSSocket("https://165.227.146.155:3002", 123456, "0")
         gps_sensor = MyGPSSensor(socket)
 
         # Create new task and add it to the event loop
