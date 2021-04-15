@@ -98,7 +98,9 @@ class GPSSocket:
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        print("In gps.py 'get_query_url' method. self.token value: ")
+        print(
+            "In gps.py 'get_query_url' method. self.token value: ", self.token
+        )
         self.url += f"?token={encoded_jwt}"
 
     async def send_data(self, data):
