@@ -187,7 +187,7 @@ class MyGPSSensor(GPSSensor):
             self.gear += 1
 
     async def pre_run(self):
-        # run CarGame's on_config
+        await asyncio.sleep(1)
         await self.gps_socket.connect()
         await self.connect()
 
