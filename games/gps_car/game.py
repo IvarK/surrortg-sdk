@@ -254,7 +254,7 @@ class CarGame(Game):
         # http://localhost:9090'
         print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
         self.gps_socket = GPSSocket(
-            "https://165.227.146.155:3002", self.io._config["device_id"], 0
+            "https://gps.surrogate.tv:3002", self.io._config["device_id"], 0
         )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
