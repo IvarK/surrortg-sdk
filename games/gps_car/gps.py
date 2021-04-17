@@ -1,7 +1,6 @@
 import serial
 import socketio
 import asyncio
-import jwt
 from dataclasses import dataclass
 from .area.game_areas import GameArea
 from .area.area_methods import inside_area_effect, distance_to_border
@@ -92,16 +91,15 @@ class GPSSocket:
                 break
 
     async def get_query_url(self, url):
+        """
         data = {
             "role": "location",
             "gameId": self.game_id,
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-        print(
-            "In gps.py 'get_query_url' method. self.token value: ", self.token
-        )
-        self.url += f"?token={encoded_jwt}"
+        """
+        self.url += f"?token={self.token}"
 
     async def send_data(self, data):
         x = {
@@ -110,7 +108,6 @@ class GPSSocket:
             "long": data.lon,
             "lat": data.lat,
         }
-        # print("sending: ", x)
         await self.sio.emit("location_data", x, namespace="/robot")
 
     async def connect(self):
@@ -130,13 +127,11 @@ class GPSSocket:
         # For testing locally
         if "localhost" not in self.url:
             await self.get_query_url(self.url)
-        print(self.url)
+
         await self.sio.connect(self.url, namespaces=["/robot"])
-        print("CONNECTED")
 
     async def disconnect(self):
         await self.sio.disconnect()
-        print("disconnected")
 
 
 class GPSSensor:
@@ -244,7 +239,6 @@ if __name__ == "__main__":
         async def run(self, polling_rate):
             await self.pre_run()
             while True:
-                print("running")
                 loc = self.get_data()
                 await self.socket.send_data(loc)
                 await asyncio.sleep(polling_rate)

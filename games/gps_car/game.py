@@ -187,6 +187,7 @@ class MyGPSSensor(GPSSensor):
             self.gear += 1
 
     async def pre_run(self):
+        # Sleep for 1 so the game class has time to set up on_config
         await asyncio.sleep(1)
         await self.gps_socket.connect()
         await self.connect()
@@ -253,10 +254,12 @@ class CarGame(Game):
 
         # create gpsSocket and custom GPSSensor
         # http://localhost:9090'
-        print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
+        # print("GAME ID OF CONFIG: ", self.io._config["game_engine"]["id"])
 
         self.gps_socket = GPSSocket(
-            "https://gps.surrogate.tv:3002", self.io._config["device_id"], 0,
+            "https://gps.surrogate.tv:3002",
+            self.io._config["device_id"],
+            self.io._config["game_engine"]["id"],
         )  # pass all required parameters here
         self.gps_sensor = MyGPSSensor(self.gps_socket, self.io, self.motor)
         # Create new task
@@ -265,17 +268,9 @@ class CarGame(Game):
         self.task.add_done_callback(self.run_done_cb)
 
     async def on_config(self):
-        """Do things before the game engine starts fetching new players
 
-        For example new inputs can be registered here if they change
-        based on self.configs.
-        """
+        # Get the JWT token for GPSSocket class
         self.gps_socket.token = self._configs.get("locationServiceToken")
-        # Gives the JWT (token), not the secret!
-        print(
-            "on_config token print: ",
-            self._configs.get("locationServiceToken"),
-        )
 
     async def run_done_cb(self, fut):
         # make program end if GPSSensor's run() raises errors
