@@ -92,19 +92,19 @@ class GPSSocket:
                 break
 
     async def get_query_url(self, url):
-
+        """
         data = {
             "role": "location",
             "gameId": self.game_id,
             "robotId": self.robot_id,
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
-
+        """
         print(
             "uncoded token: ",
             jwt.decode(self.token, self.secret, algorithms=["HS256"]),
         )
-        self.url += f"?token={encoded_jwt}"
+        self.url += f"?token={self.token}"
 
     async def send_data(self, data):
         x = {
