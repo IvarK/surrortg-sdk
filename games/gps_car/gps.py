@@ -1,7 +1,6 @@
 import serial
 import socketio
 import asyncio
-import jwt
 from dataclasses import dataclass
 from .area.game_areas import GameArea
 from .area.area_methods import inside_area_effect, distance_to_border
@@ -37,7 +36,6 @@ class GPSData:
 class GPSSocket:
 
     sio = socketio.AsyncClient()
-    secret = "Q8hCkLX7LH5g5YSEnVYULGPtYuPjBcbg"
 
     def __init__(self, url, robot_id, game_id):
         self.url = url
@@ -100,10 +98,6 @@ class GPSSocket:
         }
         encoded_jwt = jwt.encode(data, self.secret, algorithm="HS256")
         """
-        print(
-            "uncoded token: ",
-            jwt.decode(self.token, self.secret, algorithms=["HS256"]),
-        )
         self.url += f"?token={self.token}"
 
     async def send_data(self, data):
