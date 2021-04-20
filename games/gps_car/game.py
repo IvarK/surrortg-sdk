@@ -189,7 +189,7 @@ class MyGPSSensor(GPSSensor):
     async def pre_run(self):
         # Sleep for 1 so the game class has time to set up on_config
         print("pre_run sleep begins")
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         print("pre_run sleep ends")
         await self.gps_socket.connect()
         await self.connect()
