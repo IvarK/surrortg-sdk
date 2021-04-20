@@ -187,8 +187,13 @@ class MyGPSSensor(GPSSensor):
             self.gear += 1
 
     async def pre_run(self):
-        # Sleep for 1 so the game class has time to set up on_config
-        await asyncio.sleep(1)
+        """
+        Sleep for 2 so the game class has time to set up on_config and
+        the socket connection can get the JWT token from the GE.
+        This should probably be replaced with something else with other
+        games, in case the game specific config takes longer to load.
+        """
+        await asyncio.sleep(2)
         await self.gps_socket.connect()
         await self.connect()
 
